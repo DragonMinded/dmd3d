@@ -75,15 +75,24 @@ int main() {
             // Make sure we have adequate time from displaying the previous column.
             delayMicroseconds(90);
 
+            // For some reason, the top row flickers a bit, must be a timing issue, but we can patch around
+            // it by being tricky with how much we delay displaying the first row after clocking it in.
+            if (row == 1) {
+                for (int delay = 0; delay < 6; delay++) {
+                    delayMicroseconds(50);
+                }
+            }
+
             // Now, latch the column.
             digitalWrite(OUT_ENABLE, LOW);
             digitalWrite(COL_LATCH, HIGH);
             digitalWrite(COL_LATCH, LOW);
 
-            // Latch in the row indicator, which we only need to do once.
+            // Latch in the row indicator, which we only need to do once. Write a LOW otherwise to keep
+            // the timing consistent.
             if (row == 0) {
                 digitalWrite(ROW_DATA, HIGH);
-            } else if (row == 1) {
+            } else {
                 digitalWrite(ROW_DATA, LOW);
             }
 
@@ -95,7 +104,7 @@ int main() {
 
         // With the current setup, this delay gives a solid 60fps refresh, so we can
         // stay in refresh lock with anything trying to output video.
-        for (int delay = 0; delay < 81; delay++) {
+        for (int delay = 0; delay < 61; delay++) {
             delayMicroseconds(17);
         }
 
