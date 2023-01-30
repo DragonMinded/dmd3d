@@ -1,0 +1,11 @@
+*.swp
+*.bmp
+*.jpg
+*.gif
+*.webm
+*.webp
+*.png
+frame.bin
+driver
+libwiringx.a
+wiringx.h
