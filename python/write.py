@@ -71,8 +71,11 @@ def write(text: str, out: str, height: int = 12, center: bool = False) -> None:
     img = img.convert("L")
     img = img.convert("1")
 
-    with open(out, "wb") as bfp:
-        bfp.write(bytes(img.getdata()))
+    if out.lower().endswith(".bin"):
+        with open(out, "wb") as bfp:
+            bfp.write(bytes(img.getdata()))
+    else:
+        img.save(out)
 
 
 if __name__ == "__main__":

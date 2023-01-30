@@ -18,8 +18,11 @@ def convert(path: str, out: str, invert: bool = False) -> None:
         img = ImageOps.invert(img)
 
     # Finally, serialize it.
-    with open(out, "wb") as bfp:
-        bfp.write(bytes(img.getdata()))
+    if out.lower().endswith(".bin"):
+        with open(out, "wb") as bfp:
+            bfp.write(bytes(img.getdata()))
+    else:
+        img.save(out)
 
 
 if __name__ == "__main__":
