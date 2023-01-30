@@ -45,7 +45,7 @@ int main() {
     unsigned long frames = 0;
 
     while( 1 ) {
-        uint8_t data[128*64];
+        uint8_t data[128*65];
         FILE *fp = fopen("frame.bin", "rb");
 
         if (fp != NULL) {
@@ -63,14 +63,17 @@ int main() {
             memset(data, 0, 128*64);
         }
 
-        for (int row = 0; row < 64; row++) {
+        // We clock one more row than we have in order to make sure the final line isn't overly bright.
+        for (int row = 0; row < 65; row++) {
             // First, clock out the column data.
             for (int col = 0; col < 128; col++) {
                 digitalWrite(COL_DATA, data[row * 128 + col] ? HIGH : LOW);
-                delayMicroseconds(1);
                 digitalWrite(COL_CLOCK, HIGH);
                 digitalWrite(COL_CLOCK, LOW);
             }
+
+            // Make sure we have adequate time from displaying the previous column.
+            delayMicroseconds(90);
 
             // Now, latch the column.
             digitalWrite(OUT_ENABLE, LOW);
@@ -92,7 +95,9 @@ int main() {
 
         // With the current setup, this delay gives a solid 60fps refresh, so we can
         // stay in refresh lock with anything trying to output video.
-        delayMicroseconds(75);
+        for (int delay = 0; delay < 81; delay++) {
+            delayMicroseconds(17);
+        }
 
         frames++;
 
