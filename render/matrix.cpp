@@ -29,32 +29,26 @@ Matrix::Matrix() {
 }
 
 Matrix::Matrix(int width, int height, double fov, double zNear, double zFar) {
-    a11 = 1.0;
+    // Create the part of the matrix that will give us the correct destination coordinates
+    double halfwidth = width / 2.0;
+    double halfheight = height / 2.0;
+
+    a11 = halfwidth;
     a12 = 0.0;
     a13 = 0.0;
     a14 = 0.0;
     a21 = 0.0;
-    a22 = 1.0;
+    a22 = halfheight;
     a23 = 0.0;
     a24 = 0.0;
     a31 = 0.0;
     a32 = 0.0;
     a33 = 1.0;
     a34 = 0.0;
-    a41 = 0.0;
-    a42 = 0.0;
+    a41 = halfwidth;
+    a42 = halfheight;
     a43 = 0.0;
     a44 = 1.0;
-
-    // Create the part of the matrix that will give us the correct destination coordinates
-    double halfwidth = width / 2.0;
-    double halfheight = height / 2.0;
-
-    Matrix *screenViewMatrix = new Matrix();
-    screenViewMatrix->a11 = halfwidth;
-    screenViewMatrix->a22 = halfheight;
-    screenViewMatrix->a41 = halfwidth;
-    screenViewMatrix->a42 = halfheight;
 
     // Create a projection matrix which allows for perspective projection.
     double fovrads = (fov / 180.0) * M_PI;
@@ -62,24 +56,24 @@ Matrix::Matrix(int width, int height, double fov, double zNear, double zFar) {
     double cot_fovy_2 = cos(fovrads / 2.0) / sin(fovrads / 2.0);
 
     Matrix *projectionMatrix = new Matrix();
-    projectionMatrix->a11 = -cot_fovy_2 / aspect;
+    projectionMatrix->a11 = cot_fovy_2 / aspect;
     projectionMatrix->a22 = cot_fovy_2;
-    projectionMatrix->a33 = (zFar+zNear)/(zNear-zFar);
-    projectionMatrix->a43 = (2.0*zFar*zNear)/(zNear-zFar);
+    projectionMatrix->a33 = -(zFar+zNear)/(zNear-zFar);
+    projectionMatrix->a34 = -1;
+    projectionMatrix->a43 = -(2.0*zFar*zNear)/(zNear-zFar);
     
-    multiply(screenViewMatrix);
     multiply(projectionMatrix);
 
-    delete screenViewMatrix;
     delete projectionMatrix;
 }
 
 Point *Matrix::multiplyPoint(Point *point) {
-    return new Point(
-        (a11 * point->x) + (a21 * point->y) + (a31 * point->z) + a41,
-        (a12 * point->x) + (a22 * point->y) + (a32 * point->z) + a42,
-        (a13 * point->x) + (a23 * point->y) + (a33 * point->z) + a43
-    );
+    double x = (a11 * point->x) + (a21 * point->y) + (a31 * point->z) + a41;
+    double y = (a12 * point->x) + (a22 * point->y) + (a32 * point->z) + a42;
+    double z = (a13 * point->x) + (a23 * point->y) + (a33 * point->z) + a43;
+    double w = (a14 * point->x) + (a24 * point->y) + (a34 * point->z) + a44;
+
+    return new Point(x / w, y / w, z / w);
 }
 
 Matrix *Matrix::translate(double x, double y, double z) {

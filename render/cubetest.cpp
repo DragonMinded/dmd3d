@@ -73,9 +73,15 @@ int main (int argc, char *argv[]) {
             new Point(-val,  val,  val),
         };
 
+        // Manipulate location of object in world.
+        Matrix *effectsMatrix = new Matrix();
+        effectsMatrix->translateZ(2.5);
+        effectsMatrix->rotateX(60 + count);
+        effectsMatrix->rotateY(30 + count);
+        multiplyPoints(effectsMatrix, coords, sizeof(coords) / sizeof(coords[0]));
+
         // Set up the view matrix.
         Matrix *viewMatrix = new Matrix(SIGN_WIDTH, SIGN_HEIGHT, 90.0, 1.0, 1000.0);
-        viewMatrix->rotateY(count);
 
         // Move the cube to where it should go.
         multiplyPoints(viewMatrix, coords, sizeof(coords) / sizeof(coords[0]));
