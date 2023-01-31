@@ -8,9 +8,9 @@
 #define COL_DATA 8
 #define COL_CLOCK 9
 #define COL_LATCH 7
-#define ROW_CLOCK 15
-#define ROW_DATA 16
-#define OUT_ENABLE 1
+#define ROW_CLOCK 27
+#define ROW_DATA 28
+#define OUT_ENABLE 29
 
 int main() {
     if (nice(-20) == -1) {
