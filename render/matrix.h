@@ -1,3 +1,6 @@
+#ifndef MATRIX_H
+#define MATRIX_H
+
 class Point {
     public:
         // Constructor
@@ -27,6 +30,9 @@ class Matrix {
 
         // Multiply a point to translate/rotate/scale that point in 3D space.
         Point *multiplyPoint(Point *point);
+
+        // Multiply an array of poitns to translate/rotate/scale those points in 3D space, updating the points in-place.
+        void multiplyPoints(Point *points[], int length);
 
         // Translate this matrix by an X/Y/Z value represented by a point.
         Matrix *translate(Point *point);
@@ -74,3 +80,5 @@ class Matrix {
         double a43;
         double a44;
 };
+
+#endif

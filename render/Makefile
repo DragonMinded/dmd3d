@@ -1,11 +1,16 @@
-all: matrixtest cubetest
+all: matrixtest recttest cubetest
 
 matrixtest: matrix.cpp matrix.h matrixtest.cpp
 	g++ -O3 -o matrixtest matrix.cpp matrixtest.cpp
 
-cubetest: matrix.cpp matrix.h cubetest.cpp
-	g++ -O3 -o cubetest matrix.cpp cubetest.cpp
+recttest: matrix.cpp matrix.h raster.cpp raster.h recttest.cpp
+	g++ -O3 -o recttest matrix.cpp raster.cpp recttest.cpp
+
+cubetest: matrix.cpp matrix.h raster.cpp raster.h cubetest.cpp
+	g++ -O3 -o cubetest matrix.cpp raster.cpp cubetest.cpp
 
 .PHONY: clean
 clean:
 	rm -rf matrixtest
+	rm -rf recttest
+	rm -rf cubetest

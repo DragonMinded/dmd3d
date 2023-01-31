@@ -76,6 +76,14 @@ Point *Matrix::multiplyPoint(Point *point) {
     return new Point(x / w, y / w, z / w);
 }
 
+void Matrix::multiplyPoints(Point *points[], int length) {
+    for (int i = 0; i < length; i++) {
+        Point *newPoint = multiplyPoint(points[i]);
+        delete points[i];
+        points[i] = newPoint;
+    }
+}
+
 Matrix *Matrix::translate(double x, double y, double z) {
     Point *point = new Point(x, y, z);
     translate(point->x, point->y, point->z);
