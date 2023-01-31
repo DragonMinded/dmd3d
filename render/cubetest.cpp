@@ -2,12 +2,38 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
-#include <unistd.h>
 #include "matrix.h"
 
 #define SIGN_WIDTH 128
 #define SIGN_HEIGHT 64
 #define RENDER_CUBE 1
+
+void waitForVBlank() {
+    static unsigned long lastFrame = 0xFFFFFFFFFFFFFFFFL;
+
+    while( 1 ) {
+        unsigned long curFrame = lastFrame;
+
+        FILE *fp = fopen("/sign/lastframe", "rb");
+        if (fp != NULL) {
+            (void)!fread(&curFrame, 1, sizeof(curFrame), fp);
+            fclose(fp);
+        }
+
+        if (curFrame != lastFrame) {
+            lastFrame = curFrame;
+            return;
+        }
+    }
+}
+
+void renderFrame(uint8_t pixBuf[]) {
+    FILE *fp = fopen("/sign/frame.bin", "wb");
+    if (fp != NULL) {
+        (void)!fwrite(pixBuf, 1, SIGN_WIDTH * SIGN_HEIGHT, fp);
+        fclose(fp);
+    }
+}
 
 void multiplyPoints(Matrix *matrix, Point *coords[], int length) {
     for (int i = 0; i < length; i++) {
@@ -17,21 +43,21 @@ void multiplyPoints(Matrix *matrix, Point *coords[], int length) {
     }
 }
 
-void drawPixel(uint8_t pixbuf[], int x, int y) {
+void drawPixel(uint8_t pixBuf[], int x, int y) {
     if (x < 0 || x >= SIGN_WIDTH || y < 0 || y >= SIGN_HEIGHT) {
         return;
     }
 
-    pixbuf[x + (y * SIGN_WIDTH)] = 1;
+    pixBuf[x + (y * SIGN_WIDTH)] = 1;
 }
 
-void drawLine(uint8_t pixbuf[], int x0, int y0, int x1, int y1) {
+void drawLine(uint8_t pixBuf[], int x0, int y0, int x1, int y1) {
     int dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
     int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1;
     int err = dx + dy, e2; /* error value e_xy */
 
     for (;;){  /* loop */
-        drawPixel(pixbuf, x0, y0);
+        drawPixel(pixBuf, x0, y0);
         if (x0 == x1 && y0 == y1) break;
         e2 = 2 * err;
         if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
@@ -39,15 +65,15 @@ void drawLine(uint8_t pixbuf[], int x0, int y0, int x1, int y1) {
     }
 }
 
-void drawLine(uint8_t pixbuf[], Point *first, Point *second) {
-    drawLine(pixbuf, (int)first->x, (int)first->y, (int)second->x, (int)second->y);
+void drawLine(uint8_t pixBuf[], Point *first, Point *second) {
+    drawLine(pixBuf, (int)first->x, (int)first->y, (int)second->x, (int)second->y);
 }
 
-void drawQuad(uint8_t pixbuf[], Point *first, Point *second, Point *third, Point *fourth) {
-    drawLine(pixbuf, first, second);
-    drawLine(pixbuf, second, third);
-    drawLine(pixbuf, third, fourth);
-    drawLine(pixbuf, fourth, first);
+void drawQuad(uint8_t pixBuf[], Point *first, Point *second, Point *third, Point *fourth) {
+    drawLine(pixBuf, first, second);
+    drawLine(pixBuf, second, third);
+    drawLine(pixBuf, third, fourth);
+    drawLine(pixBuf, fourth, first);
 }
 
 int main (int argc, char *argv[]) {
@@ -110,19 +136,13 @@ int main (int argc, char *argv[]) {
 #endif
 
         // Render it to the screen.
-        FILE *fp = fopen("/sign/frame.bin", "wb");
-        if (fp != NULL) {
-            (void)!fwrite(pixBuf, 1, SIGN_WIDTH * SIGN_HEIGHT, fp);
-            fclose(fp);
-        }
+        waitForVBlank();
+        renderFrame(pixBuf);
 
         // Clean up.
         for (int i = 0; i < sizeof(coords) / sizeof(coords[0]); i++) {
             delete coords[i];
         }
-
-        // Sleep for 1/60th of a second.
-        usleep(1000000 / 60);
 
         // Keep track of location.
         count++;

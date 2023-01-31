@@ -43,6 +43,7 @@ int main() {
 
     unsigned long lastTime = (unsigned long)time(NULL);
     unsigned long frames = 0;
+    unsigned long lastFrame = 0;
 
     while( 1 ) {
         uint8_t data[128*65];
@@ -62,6 +63,16 @@ int main() {
         } else {
             memset(data, 0, 128*64);
         }
+
+        // Now, write the last frame so other applications can vsync.
+        fp = fopen("lastframe", "wb");
+        if (fp != NULL) {
+            fwrite(&lastFrame, 1, sizeof(lastFrame), fp);
+            fclose(fp);
+        }
+
+        // Mark that we've advanced past this frame.
+        lastFrame++;
 
         // We clock one more row than we have in order to make sure the final line isn't overly bright.
         for (int row = 0; row < 65; row++) {
