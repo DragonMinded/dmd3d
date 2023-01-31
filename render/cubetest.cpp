@@ -40,7 +40,7 @@ int main (int argc, char *argv[]) {
         delete effectsMatrix;
 
         // Move the cube to where it should go.
-        viewMatrix->multiplyPoints(leftCoords, sizeof(leftCoords) / sizeof(leftCoords[0]));
+        viewMatrix->projectPoints(leftCoords, sizeof(leftCoords) / sizeof(leftCoords[0]));
 
         // Draw the cube.
         screen->drawQuad(leftCoords[0], leftCoords[1], leftCoords[2], leftCoords[3], true);
@@ -72,21 +72,22 @@ int main (int argc, char *argv[]) {
         delete effectsMatrix;
 
         // Move the cube to where it should go.
-        viewMatrix->multiplyPoints(rightCoords, sizeof(rightCoords) / sizeof(rightCoords[0]));
+        viewMatrix->projectPoints(rightCoords, sizeof(rightCoords) / sizeof(rightCoords[0]));
 
         // Draw the cube.
-        screen->drawQuad(rightCoords[0], rightCoords[1], rightCoords[2], rightCoords[3], true);
-        screen->drawQuad(rightCoords[5], rightCoords[4], rightCoords[7], rightCoords[6], true);
-        screen->drawQuad(rightCoords[0], rightCoords[4], rightCoords[5], rightCoords[1], true);
-        screen->drawQuad(rightCoords[1], rightCoords[5], rightCoords[6], rightCoords[2], true);
-        screen->drawQuad(rightCoords[2], rightCoords[6], rightCoords[7], rightCoords[3], true);
-        screen->drawQuad(rightCoords[0], rightCoords[3], rightCoords[7], rightCoords[4], true);
+        screen->drawOccludedQuad(rightCoords[0], rightCoords[1], rightCoords[2], rightCoords[3]);
+        screen->drawOccludedQuad(rightCoords[5], rightCoords[4], rightCoords[7], rightCoords[6]);
+        screen->drawOccludedQuad(rightCoords[0], rightCoords[4], rightCoords[5], rightCoords[1]);
+        screen->drawOccludedQuad(rightCoords[1], rightCoords[5], rightCoords[6], rightCoords[2]);
+        screen->drawOccludedQuad(rightCoords[2], rightCoords[6], rightCoords[7], rightCoords[3]);
+        screen->drawOccludedQuad(rightCoords[0], rightCoords[3], rightCoords[7], rightCoords[4]);
 
         // Render it to the screen.
         screen->waitForVBlank();
         screen->renderFrame();
 
         // Clean up.
+        delete viewMatrix;
         for (int i = 0; i < sizeof(leftCoords) / sizeof(leftCoords[0]); i++) {
             delete leftCoords[i];
         }

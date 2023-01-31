@@ -6,6 +6,36 @@
 #define SIGN_WIDTH 128
 #define SIGN_HEIGHT 64
 
+#define CLAMP_MODE_NORMAL 0
+#define CLAMP_MODE_MIRROR 1
+#define CLAMP_MODE_TILE 2
+
+class UV {
+    public:
+        UV(double u, double v);
+
+        double u;
+        double v;
+};
+
+class Texture {
+    public:
+        Texture(int width, int height);
+        Texture(int width, int height, unsigned char data[]);
+        ~Texture();
+
+        void setClampMode(int mode);
+
+        unsigned char valueAt(double u, double v);
+
+    private:
+        int width;
+        int height;
+        int managed;
+        int mode;
+        unsigned char *data;
+};
+
 class Screen {
     public:
         void clear();
@@ -18,7 +48,20 @@ class Screen {
         void drawTri(Point *first, Point *second, Point *third, bool on);
         void drawQuad(Point *first, Point *second, Point *third, Point *fourth, bool on);
 
+        void drawTexturedTri(Point *first, Point *second, Point *third, UV *firstTex, UV *secondTex, UV *thirdTex, Texture *tex);
+        void drawTexturedQuad(
+            Point *first, Point *second, Point *third, Point *fourth,
+            UV *firstTex, UV *secondTex, UV *thirdTex, UV *fourthTex,
+            Texture *tex
+        );
+
+        void drawOccludedTri(Point *first, Point *second, Point *third);
+        void drawOccludedQuad(Point *first, Point *second, Point *third, Point *fourth);
+
     private:
+        bool _getPixel(int x, int y);
+        void _drawOccludedTri(Point *first, Point *second, Point *third, Screen *outline);
+
         unsigned char pixBuf[SIGN_WIDTH * SIGN_HEIGHT];
         double zBuf[SIGN_WIDTH * SIGN_HEIGHT];
 };

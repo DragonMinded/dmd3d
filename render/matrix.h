@@ -31,8 +31,14 @@ class Matrix {
         // Multiply a point to translate/rotate/scale that point in 3D space.
         Point *multiplyPoint(Point *point);
 
-        // Multiply an array of poitns to translate/rotate/scale those points in 3D space, updating the points in-place.
+        // Project a point from 3D to 2D space, preserving linearity and 1/W in Z.
+        Point *projectPoint(Point *point);
+
+        // Multiply an array of points, updating the points in-place.
         void multiplyPoints(Point *points[], int length);
+
+        // Project an array of points, updating the points in-place.
+        void projectPoints(Point *points[], int length);
 
         // Translate this matrix by an X/Y/Z value represented by a point.
         Matrix *translate(Point *point);
