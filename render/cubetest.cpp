@@ -41,12 +41,12 @@ int main (int argc, char *argv[]) {
         viewMatrix->multiplyPoints(coords, sizeof(coords) / sizeof(coords[0]));
 
         // Draw the cube.
-        screen->drawQuad(coords[0], coords[1], coords[2], coords[3]);
-        screen->drawQuad(coords[4], coords[5], coords[6], coords[7]);
-        screen->drawLine(coords[0], coords[4]);
-        screen->drawLine(coords[1], coords[5]);
-        screen->drawLine(coords[2], coords[6]);
-        screen->drawLine(coords[3], coords[7]);
+        screen->drawQuad(coords[0], coords[1], coords[2], coords[3], true);
+        screen->drawQuad(coords[4], coords[5], coords[6], coords[7], true);
+        screen->drawLine(coords[0], coords[4], true);
+        screen->drawLine(coords[1], coords[5], true);
+        screen->drawLine(coords[2], coords[6], true);
+        screen->drawLine(coords[3], coords[7], true);
 
         // Render it to the screen.
         screen->waitForVBlank();

@@ -12,13 +12,14 @@ class Screen {
         void waitForVBlank();
         void renderFrame();
 
-        void drawPixel(int x, int y);
-        void drawLine(int x0, int y0, int x1, int y1);
-        void drawLine(Point *first, Point *second);
-        void drawQuad(Point *first, Point *second, Point *third, Point *fourth);
+        void drawPixel(int x, int y, double z, bool on);
+        void drawLine(int x0, int y0, double z0, int x1, int y1, double z1, bool on);
+        void drawLine(Point *first, Point *second, bool on);
+        void drawQuad(Point *first, Point *second, Point *third, Point *fourth, bool on);
 
     private:
         unsigned char pixBuf[SIGN_WIDTH * SIGN_HEIGHT];
+        double zBuf[SIGN_WIDTH * SIGN_HEIGHT];
 };
 
 #endif

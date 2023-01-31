@@ -29,7 +29,7 @@ int main (int argc, char *argv[]) {
         rotMatrix->multiplyPoints(coords, sizeof(coords) / sizeof(coords[0]));
 
         // Draw the quad to the screen itself.
-        screen->drawQuad(coords[0], coords[1], coords[2], coords[3]);
+        screen->drawQuad(coords[0], coords[1], coords[2], coords[3], true);
 
         // Write out the render to the screen.
         screen->waitForVBlank();
