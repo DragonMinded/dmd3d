@@ -9,5 +9,6 @@ frame.bin
 driver
 matrixtest
 cubetest
+recttest
 libwiringx.a
 wiringx.h
