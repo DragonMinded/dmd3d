@@ -60,6 +60,7 @@ class Screen {
 
     private:
         bool _getPixel(int x, int y);
+        bool _isBackFacing(Point *first, Point *second, Point *third);
         void _drawOccludedTri(Point *first, Point *second, Point *third, Screen *outline);
 
         unsigned char pixBuf[SIGN_WIDTH * SIGN_HEIGHT];

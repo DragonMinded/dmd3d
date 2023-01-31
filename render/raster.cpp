@@ -334,7 +334,22 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
     delete xyMatrix;
 }
 
+bool Screen::_isBackFacing(Point *first, Point *second, Point *third) {
+    // We are a CW system, not a CCW system, so the first vector is first->third.
+    double ax = third->x - first->x;
+    double ay = third->y - first->y;
+
+    double bx = second->x - first->x;
+    double by = second->y - first->y;
+
+    // We just need the Z axis from the cross product.
+    return ((ax * by) - (ay * bx)) > 0.0;
+}
+
 void Screen::drawOccludedTri(Point *first, Point *second, Point *third) {
+    // Don't draw this if it is back-facing.
+    if (_isBackFacing(first, second, third)) { return; }
+
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the triangle.
     Screen *tmpScreen = new Screen();
     tmpScreen->clear();
@@ -342,10 +357,16 @@ void Screen::drawOccludedTri(Point *first, Point *second, Point *third) {
 
     // Now, draw the "texture".
     _drawOccludedTri(first, second, third, tmpScreen);
+
+    // Now, "fill in the blanks" so to speak for the rounding error between bressenham and texture mapping.
+    drawTri(first, second, third, true);
     delete tmpScreen;
 }
 
 void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *fourth) {
+    // Don't draw this if it is back-facing.
+    if (_isBackFacing(first, second, fourth)) { return; }
+
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the quad.
     Screen *tmpScreen = new Screen();
     tmpScreen->clear();
@@ -354,5 +375,8 @@ void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *
     // Now, draw the "texture" in two quads.
     _drawOccludedTri(first, second, fourth, tmpScreen);
     _drawOccludedTri(second, third, fourth, tmpScreen);
+
+    // Now, "fill in the blanks" so to speak for the rounding error between bressenham and texture mapping.
+    drawQuad(first, second, third, fourth, true);
     delete tmpScreen;
 }
