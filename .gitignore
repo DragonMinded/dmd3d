@@ -7,5 +7,7 @@
 *.png
 frame.bin
 driver
+matrixtest
+cubetest
 libwiringx.a
 wiringx.h
