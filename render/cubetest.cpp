@@ -7,6 +7,7 @@
 
 #define SIGN_WIDTH 128
 #define SIGN_HEIGHT 64
+#define RENDER_CUBE 0
 
 void multiplyPoints(Matrix *matrix, Point *coords[], int length) {
     for (int i = 0; i < length; i++) {
@@ -54,33 +55,48 @@ int main (int argc, char *argv[]) {
         uint8_t pixBuf[SIGN_WIDTH * SIGN_HEIGHT];
         memset(pixBuf, 0, SIGN_WIDTH * SIGN_HEIGHT);
 
+#if RENDER_CUBE
         // Set up our throbbing cube.
-        double val = 1.0 + (sin((count / 30.0) * M_PI) / 32.0);
+        double val = 0.5; //(1.0 + (sin((count / 30.0) * M_PI) / 32.0));
         Point *coords[8] = {
             new Point(-val, -val, -val),
             new Point( val, -val, -val),
-            new Point(-val,  val, -val),
             new Point( val,  val, -val),
+            new Point(-val,  val, -val),
             new Point(-val, -val,  val),
             new Point( val, -val,  val),
-            new Point(-val,  val,  val),
             new Point( val,  val,  val),
+            new Point(-val,  val,  val),
         };
 
         // Set up the view matrix.
-        Matrix *viewMatrix = new Matrix(SIGN_WIDTH, SIGN_HEIGHT, 90.0, 1.0, 1000.0);
-        viewMatrix->translateZ(5.0);
+        Matrix *viewMatrix = new Matrix(SIGN_WIDTH, SIGN_HEIGHT, 90.0, -1.0, -1000.0);
 
         // Move the cube to where it should go.
         multiplyPoints(viewMatrix, coords, sizeof(coords) / sizeof(coords[0]));
 
         // Draw the cube.
         drawQuad(pixBuf, coords[0], coords[1], coords[2], coords[3]);
-        drawQuad(pixBuf, coords[1], coords[5], coords[3], coords[7]);
-        drawQuad(pixBuf, coords[4], coords[5], coords[0], coords[1]);
-        drawQuad(pixBuf, coords[5], coords[4], coords[7], coords[6]);
-        drawQuad(pixBuf, coords[4], coords[0], coords[6], coords[2]);
-        drawQuad(pixBuf, coords[2], coords[3], coords[6], coords[7]);
+        //drawQuad(pixBuf, coords[1], coords[5], coords[3], coords[7]);
+        //drawQuad(pixBuf, coords[4], coords[5], coords[0], coords[1]);
+        drawQuad(pixBuf, coords[4], coords[5], coords[6], coords[7]);
+        //drawQuad(pixBuf, coords[4], coords[0], coords[6], coords[2]);
+        //drawQuad(pixBuf, coords[2], coords[3], coords[6], coords[7]);
+#else
+        Point *coords[4] = {
+            new Point(42, 10, 0),
+            new Point(86, 10, 0),
+            new Point(86, 54, 0),
+            new Point(42, 54, 0),
+        };
+
+        Matrix *rotMatrix = new Matrix();
+        Point *origin = new Point(64, 32, 0);
+        rotMatrix->rotateOriginZ(origin, count * 3);
+        multiplyPoints(rotMatrix, coords, sizeof(coords) / sizeof(coords[0]));
+
+        drawQuad(pixBuf, coords[0], coords[1], coords[2], coords[3]);
+#endif
 
         // Render it to the screen.
         FILE *fp = fopen("/sign/frame.bin", "wb");
@@ -89,8 +105,16 @@ int main (int argc, char *argv[]) {
             fclose(fp);
         }
 
+        // Clean up.
+        for (int i = 0; i < sizeof(coords) / sizeof(coords[0]); i++) {
+            delete coords[i];
+        }
+
         // Sleep for 1/60th of a second.
         usleep(1000000 / 60);
+
+        // Keep track of location.
+        count++;
     }
 
     printf("Done!\n");

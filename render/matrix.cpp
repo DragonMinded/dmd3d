@@ -65,10 +65,10 @@ Matrix::Matrix(int width, int height, double fov, double zNear, double zFar) {
     projectionMatrix->a11 = -cot_fovy_2 / aspect;
     projectionMatrix->a22 = cot_fovy_2;
     projectionMatrix->a33 = (zFar+zNear)/(zNear-zFar);
-    projectionMatrix->a43 = 2*zFar*zNear/(zNear-zFar);
+    projectionMatrix->a43 = (2.0*zFar*zNear)/(zNear-zFar);
     
-    multiply(screenViewMatrix);
     multiply(projectionMatrix);
+    multiply(screenViewMatrix);
 
     delete screenViewMatrix;
     delete projectionMatrix;
@@ -157,8 +157,10 @@ Matrix *Matrix::scaleZ(double z) {
 
 Matrix *Matrix::rotateX(double degrees) {
     Matrix *tmp = new Matrix();
-    tmp->a22 = tmp->a33 = cos((degrees / 180.0) * M_PI);
-    tmp->a23 = -(tmp->a32 = sin((degrees / 180.0) * M_PI));
+    tmp->a33 = cos((degrees / 180.0) * M_PI);
+    tmp->a22 = tmp->a33;
+    tmp->a32 = sin((degrees / 180.0) * M_PI);
+    tmp->a23 = -tmp->a32;
 
     multiply(tmp);
     delete tmp;
@@ -168,8 +170,10 @@ Matrix *Matrix::rotateX(double degrees) {
 
 Matrix *Matrix::rotateY(double degrees) {
     Matrix *tmp = new Matrix();
-    tmp->a11 = tmp->a33 = cos((degrees / 180.0) * M_PI);
-    tmp->a31 = -(tmp->a13 = sin((degrees / 180.0) * M_PI));
+    tmp->a33 = cos((degrees / 180.0) * M_PI);
+    tmp->a11 = tmp->a33;
+    tmp->a13 = sin((degrees / 180.0) * M_PI);
+    tmp->a31 = -tmp->a13;
 
     multiply(tmp);
     delete tmp;
@@ -179,8 +183,10 @@ Matrix *Matrix::rotateY(double degrees) {
 
 Matrix *Matrix::rotateZ(double degrees) {
     Matrix *tmp = new Matrix();
-    tmp->a11 = tmp->a22 = cos((degrees / 180.0) * M_PI);
-    tmp->a12 = -(tmp->a21 = sin((degrees / 180.0) * M_PI));
+    tmp->a22 = cos((degrees / 180.0) * M_PI);
+    tmp->a11 = tmp->a22;
+    tmp->a21 = sin((degrees / 180.0) * M_PI);
+    tmp->a12 = -tmp->a21;
 
     multiply(tmp);
     delete tmp;
@@ -190,16 +196,16 @@ Matrix *Matrix::rotateZ(double degrees) {
 
 Matrix *Matrix::rotateOriginX(Point *origin, double degrees) {
     Matrix *move = new Matrix();
-    move->a41 = origin->x;
-    move->a42 = origin->y;
-    move->a43 = origin->z;
+    move->a41 = -origin->x;
+    move->a42 = -origin->y;
+    move->a43 = -origin->z;
     multiply(move);
 
     rotateX(degrees);
 
-    move->a41 = -origin->x;
-    move->a42 = -origin->y;
-    move->a43 = -origin->z;
+    move->a41 = origin->x;
+    move->a42 = origin->y;
+    move->a43 = origin->z;
     multiply(move);
 
     delete move;
@@ -209,16 +215,16 @@ Matrix *Matrix::rotateOriginX(Point *origin, double degrees) {
 
 Matrix *Matrix::rotateOriginY(Point *origin, double degrees) {
     Matrix *move = new Matrix();
-    move->a41 = origin->x;
-    move->a42 = origin->y;
-    move->a43 = origin->z;
+    move->a41 = -origin->x;
+    move->a42 = -origin->y;
+    move->a43 = -origin->z;
     multiply(move);
 
     rotateY(degrees);
 
-    move->a41 = -origin->x;
-    move->a42 = -origin->y;
-    move->a43 = -origin->z;
+    move->a41 = origin->x;
+    move->a42 = origin->y;
+    move->a43 = origin->z;
     multiply(move);
 
     delete move;
@@ -228,16 +234,16 @@ Matrix *Matrix::rotateOriginY(Point *origin, double degrees) {
 
 Matrix *Matrix::rotateOriginZ(Point *origin, double degrees) {
     Matrix *move = new Matrix();
-    move->a41 = origin->x;
-    move->a42 = origin->y;
-    move->a43 = origin->z;
+    move->a41 = -origin->x;
+    move->a42 = -origin->y;
+    move->a43 = -origin->z;
     multiply(move);
 
     rotateZ(degrees);
 
-    move->a41 = -origin->x;
-    move->a42 = -origin->y;
-    move->a43 = -origin->z;
+    move->a41 = origin->x;
+    move->a42 = origin->y;
+    move->a43 = origin->z;
     multiply(move);
 
     delete move;
@@ -346,29 +352,50 @@ Matrix *Matrix::invert()
 }
 
 Matrix *Matrix::multiply(Matrix *other) {
+    Matrix *tmp = new Matrix();
+
     // First row.
-    a11 = (a11 * other->a11) + (a12 * other->a21) + (a13 * other->a31) + (a14 * other->a41);
-    a12 = (a11 * other->a12) + (a12 * other->a22) + (a13 * other->a32) + (a14 * other->a42);
-    a13 = (a11 * other->a13) + (a12 * other->a23) + (a13 * other->a33) + (a14 * other->a43);
-    a14 = (a11 * other->a14) + (a12 * other->a24) + (a13 * other->a34) + (a14 * other->a44);
+    tmp->a11 = (this->a11 * other->a11) + (this->a12 * other->a21) + (this->a13 * other->a31) + (this->a14 * other->a41);
+    tmp->a12 = (this->a11 * other->a12) + (this->a12 * other->a22) + (this->a13 * other->a32) + (this->a14 * other->a42);
+    tmp->a13 = (this->a11 * other->a13) + (this->a12 * other->a23) + (this->a13 * other->a33) + (this->a14 * other->a43);
+    tmp->a14 = (this->a11 * other->a14) + (this->a12 * other->a24) + (this->a13 * other->a34) + (this->a14 * other->a44);
 
     // Second row.
-    a21 = (a21 * other->a11) + (a22 * other->a21) + (a23 * other->a31) + (a24 * other->a41);
-    a22 = (a21 * other->a12) + (a22 * other->a22) + (a23 * other->a32) + (a24 * other->a42);
-    a23 = (a21 * other->a13) + (a22 * other->a23) + (a23 * other->a33) + (a24 * other->a43);
-    a24 = (a21 * other->a14) + (a22 * other->a24) + (a23 * other->a34) + (a24 * other->a44);
+    tmp->a21 = (this->a21 * other->a11) + (this->a22 * other->a21) + (this->a23 * other->a31) + (this->a24 * other->a41);
+    tmp->a22 = (this->a21 * other->a12) + (this->a22 * other->a22) + (this->a23 * other->a32) + (this->a24 * other->a42);
+    tmp->a23 = (this->a21 * other->a13) + (this->a22 * other->a23) + (this->a23 * other->a33) + (this->a24 * other->a43);
+    tmp->a24 = (this->a21 * other->a14) + (this->a22 * other->a24) + (this->a23 * other->a34) + (this->a24 * other->a44);
 
     // Third row.
-    a31 = (a31 * other->a11) + (a32 * other->a21) + (a33 * other->a31) + (a34 * other->a41);
-    a32 = (a31 * other->a12) + (a32 * other->a22) + (a33 * other->a32) + (a34 * other->a42);
-    a33 = (a31 * other->a13) + (a32 * other->a23) + (a33 * other->a33) + (a34 * other->a43);
-    a34 = (a31 * other->a14) + (a32 * other->a24) + (a33 * other->a34) + (a34 * other->a44);
+    tmp->a31 = (this->a31 * other->a11) + (this->a32 * other->a21) + (this->a33 * other->a31) + (this->a34 * other->a41);
+    tmp->a32 = (this->a31 * other->a12) + (this->a32 * other->a22) + (this->a33 * other->a32) + (this->a34 * other->a42);
+    tmp->a33 = (this->a31 * other->a13) + (this->a32 * other->a23) + (this->a33 * other->a33) + (this->a34 * other->a43);
+    tmp->a34 = (this->a31 * other->a14) + (this->a32 * other->a24) + (this->a33 * other->a34) + (this->a34 * other->a44);
 
     // Forth row.
-    a41 = (a41 * other->a11) + (a42 * other->a21) + (a43 * other->a31) + (a44 * other->a41);
-    a42 = (a41 * other->a12) + (a42 * other->a22) + (a43 * other->a32) + (a44 * other->a42);
-    a43 = (a41 * other->a13) + (a42 * other->a23) + (a43 * other->a33) + (a44 * other->a43);
-    a44 = (a41 * other->a14) + (a42 * other->a24) + (a43 * other->a34) + (a44 * other->a44);
+    tmp->a41 = (this->a41 * other->a11) + (this->a42 * other->a21) + (this->a43 * other->a31) + (this->a44 * other->a41);
+    tmp->a42 = (this->a41 * other->a12) + (this->a42 * other->a22) + (this->a43 * other->a32) + (this->a44 * other->a42);
+    tmp->a43 = (this->a41 * other->a13) + (this->a42 * other->a23) + (this->a43 * other->a33) + (this->a44 * other->a43);
+    tmp->a44 = (this->a41 * other->a14) + (this->a42 * other->a24) + (this->a43 * other->a34) + (this->a44 * other->a44);
+
+    // Copy finished over.
+    a11 = tmp->a11;
+    a12 = tmp->a12;
+    a13 = tmp->a13;
+    a14 = tmp->a14;
+    a21 = tmp->a21;
+    a22 = tmp->a22;
+    a23 = tmp->a23;
+    a24 = tmp->a24;
+    a31 = tmp->a31;
+    a32 = tmp->a32;
+    a33 = tmp->a33;
+    a34 = tmp->a34;
+    a41 = tmp->a41;
+    a42 = tmp->a42;
+    a43 = tmp->a43;
+    a44 = tmp->a44;
+    delete tmp;
 
     return this;
 }
