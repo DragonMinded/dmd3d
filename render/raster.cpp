@@ -99,6 +99,12 @@ void Screen::drawLine(Point *first, Point *second, bool on) {
     drawLine((int)first->x, (int)first->y, first->z, (int)second->x, (int)second->y, second->z, on);
 }
 
+void Screen::drawTri(Point *first, Point *second, Point *third, bool on) {
+    drawLine(first, second, on);
+    drawLine(second, third, on);
+    drawLine(third, first, on);
+}
+
 void Screen::drawQuad(Point *first, Point *second, Point *third, Point *fourth, bool on) {
     drawLine(first, second, on);
     drawLine(second, third, on);

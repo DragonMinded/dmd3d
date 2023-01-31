@@ -14,9 +14,12 @@ int main (int argc, char *argv[]) {
         // Set up our pixel buffer.
         screen->clear();
 
+        // Set up the view matrix.
+        Matrix *viewMatrix = new Matrix(SIGN_WIDTH, SIGN_HEIGHT, 90.0, 1.0, 1000.0);
+
         // Set up our throbbing cube.
         double val = (0.5 + (sin((count / 30.0) * M_PI) / 16.0));
-        Point *coords[8] = {
+        Point *leftCoords[8] = {
             new Point(-val, -val, -val),
             new Point( val, -val, -val),
             new Point( val,  val, -val),
@@ -29,32 +32,66 @@ int main (int argc, char *argv[]) {
 
         // Manipulate location of object in world.
         Matrix *effectsMatrix = new Matrix();
-        effectsMatrix->translateZ(2.5);
-        effectsMatrix->rotateX(60 + count);
-        effectsMatrix->rotateY(30 + count);
-        effectsMatrix->multiplyPoints(coords, sizeof(coords) / sizeof(coords[0]));
-
-        // Set up the view matrix.
-        Matrix *viewMatrix = new Matrix(SIGN_WIDTH, SIGN_HEIGHT, 90.0, 1.0, 1000.0);
+        effectsMatrix->translateZ(2.75);
+        effectsMatrix->translateX(1.0);
+        effectsMatrix->rotateX(60 + (count * 1.0));
+        effectsMatrix->rotateY(30 + (count * 1.1));
+        effectsMatrix->multiplyPoints(leftCoords, sizeof(leftCoords) / sizeof(leftCoords[0]));
+        delete effectsMatrix;
 
         // Move the cube to where it should go.
-        viewMatrix->multiplyPoints(coords, sizeof(coords) / sizeof(coords[0]));
+        viewMatrix->multiplyPoints(leftCoords, sizeof(leftCoords) / sizeof(leftCoords[0]));
 
         // Draw the cube.
-        screen->drawQuad(coords[0], coords[1], coords[2], coords[3], true);
-        screen->drawQuad(coords[4], coords[5], coords[6], coords[7], true);
-        screen->drawLine(coords[0], coords[4], true);
-        screen->drawLine(coords[1], coords[5], true);
-        screen->drawLine(coords[2], coords[6], true);
-        screen->drawLine(coords[3], coords[7], true);
+        screen->drawQuad(leftCoords[0], leftCoords[1], leftCoords[2], leftCoords[3], true);
+        screen->drawQuad(leftCoords[4], leftCoords[5], leftCoords[6], leftCoords[7], true);
+        screen->drawLine(leftCoords[0], leftCoords[4], true);
+        screen->drawLine(leftCoords[1], leftCoords[5], true);
+        screen->drawLine(leftCoords[2], leftCoords[6], true);
+        screen->drawLine(leftCoords[3], leftCoords[7], true);
+
+        // Set up our second throbbing cube, this time with culling of wireframe stuff.
+        Point *rightCoords[8] = {
+            new Point(-val, -val, -val),
+            new Point( val, -val, -val),
+            new Point( val,  val, -val),
+            new Point(-val,  val, -val),
+            new Point(-val, -val,  val),
+            new Point( val, -val,  val),
+            new Point( val,  val,  val),
+            new Point(-val,  val,  val),
+        };
+
+        // Manipulate location of object in world.
+        effectsMatrix = new Matrix();
+        effectsMatrix->translateZ(2.75);
+        effectsMatrix->translateX(-1.0);
+        effectsMatrix->rotateX(60 + (count * 1.2));
+        effectsMatrix->rotateY(30 + (count * 1.3));
+        effectsMatrix->multiplyPoints(rightCoords, sizeof(rightCoords) / sizeof(rightCoords[0]));
+        delete effectsMatrix;
+
+        // Move the cube to where it should go.
+        viewMatrix->multiplyPoints(rightCoords, sizeof(rightCoords) / sizeof(rightCoords[0]));
+
+        // Draw the cube.
+        screen->drawQuad(rightCoords[0], rightCoords[1], rightCoords[2], rightCoords[3], true);
+        screen->drawQuad(rightCoords[5], rightCoords[4], rightCoords[7], rightCoords[6], true);
+        screen->drawQuad(rightCoords[0], rightCoords[4], rightCoords[5], rightCoords[1], true);
+        screen->drawQuad(rightCoords[1], rightCoords[5], rightCoords[6], rightCoords[2], true);
+        screen->drawQuad(rightCoords[2], rightCoords[6], rightCoords[7], rightCoords[3], true);
+        screen->drawQuad(rightCoords[0], rightCoords[3], rightCoords[7], rightCoords[4], true);
 
         // Render it to the screen.
         screen->waitForVBlank();
         screen->renderFrame();
 
         // Clean up.
-        for (int i = 0; i < sizeof(coords) / sizeof(coords[0]); i++) {
-            delete coords[i];
+        for (int i = 0; i < sizeof(leftCoords) / sizeof(leftCoords[0]); i++) {
+            delete leftCoords[i];
+        }
+        for (int i = 0; i < sizeof(rightCoords) / sizeof(rightCoords[0]); i++) {
+            delete rightCoords[i];
         }
 
         // Keep track of location.

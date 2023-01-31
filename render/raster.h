@@ -15,6 +15,7 @@ class Screen {
         void drawPixel(int x, int y, double z, bool on);
         void drawLine(int x0, int y0, double z0, int x1, int y1, double z1, bool on);
         void drawLine(Point *first, Point *second, bool on);
+        void drawTri(Point *first, Point *second, Point *third, bool on);
         void drawQuad(Point *first, Point *second, Point *third, Point *fourth, bool on);
 
     private:
