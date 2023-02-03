@@ -301,29 +301,36 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
 
     for (int y = minY; y <= maxY; y++) {
         for (int x = minX; x <= maxX; x++) {
-            Point *curPoint = new Point(x, y, 0.0);
+            Point *curPoint = new Point(x + 0.5, y + 0.5, 0.0);
             Point *triPoint = xyMatrix->multiplyPoint(curPoint);
 
-            // Make sure that we stay within bounds of the triangle.
-            if (triPoint->x < 0.0 || triPoint->x > 1.0) {
-                delete curPoint;
-                delete triPoint;
-                continue;
-            }
-            if (triPoint->y < 0.0 || triPoint->y > 1.0) {
-                delete curPoint;
-                delete triPoint;
-                continue;
-            }
-            if (triPoint->y > (1.0 - triPoint->x)) {
-                delete curPoint;
-                delete triPoint;
-                continue;
+            // Cheeky hack to make sure we always draw the bounding box itself.
+            // We know where it should be, so rounding errors where the inverse
+            // matrix falls slightly outside of the box can be avoided if we just
+            // assume every "lit" pixel in the texture "mask" is within bounds.
+            bool isSet = screen->_getPixel(x, y);
+            if (!isSet) {
+                // Make sure that we stay within bounds of the triangle.
+                if (triPoint->x < 0.0 || triPoint->x > 1.0) {
+                    delete curPoint;
+                    delete triPoint;
+                    continue;
+                }
+                if (triPoint->y < 0.0 || triPoint->y > 1.0) {
+                    delete curPoint;
+                    delete triPoint;
+                    continue;
+                }
+                if (triPoint->y > (1.0 - triPoint->x)) {
+                    delete curPoint;
+                    delete triPoint;
+                    continue;
+                }
             }
 
             // Figure out the 1/W coordinate for this pixel.
             Point *actualPoint = xywMatrix->multiplyPoint(triPoint);
-            drawPixel(x, y, actualPoint->z, screen->_getPixel(x, y));
+            drawPixel(x, y, actualPoint->z, isSet);
             delete actualPoint;
             delete triPoint;
             delete curPoint;
@@ -357,9 +364,6 @@ void Screen::drawOccludedTri(Point *first, Point *second, Point *third) {
 
     // Now, draw the "texture".
     _drawOccludedTri(first, second, third, tmpScreen);
-
-    // Now, "fill in the blanks" so to speak for the rounding error between bressenham and texture mapping.
-    drawTri(first, second, third, true);
     delete tmpScreen;
 }
 
@@ -375,8 +379,5 @@ void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *
     // Now, draw the "texture" in two quads.
     _drawOccludedTri(first, second, fourth, tmpScreen);
     _drawOccludedTri(second, third, fourth, tmpScreen);
-
-    // Now, "fill in the blanks" so to speak for the rounding error between bressenham and texture mapping.
-    drawQuad(first, second, third, fourth, true);
     delete tmpScreen;
 }
