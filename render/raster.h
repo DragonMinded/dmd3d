@@ -3,9 +3,6 @@
 
 #include "matrix.h"
 
-#define SIGN_WIDTH 128
-#define SIGN_HEIGHT 64
-
 #define CLAMP_MODE_NORMAL 0
 #define CLAMP_MODE_MIRROR 1
 #define CLAMP_MODE_TILE 2
@@ -38,6 +35,9 @@ class Texture {
 
 class Screen {
     public:
+        Screen(int width, int height);
+        ~Screen();
+
         void clear();
         void waitForVBlank();
         void renderFrame();
@@ -75,8 +75,10 @@ class Screen {
         bool _isBackFacing(Point *first, Point *second, Point *third);
         void _drawOccludedTri(Point *first, Point *second, Point *third, Screen *outline);
 
-        unsigned char pixBuf[SIGN_WIDTH * SIGN_HEIGHT];
-        double zBuf[SIGN_WIDTH * SIGN_HEIGHT];
+        int width;
+        int height;
+        unsigned char *pixBuf;
+        double *zBuf;
 };
 
 #endif

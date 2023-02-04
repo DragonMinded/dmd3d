@@ -4,6 +4,7 @@
 #include <limits>
 #include <unistd.h>
 #include "raster.h"
+#include "common.h"
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
@@ -98,10 +99,22 @@ bool Texture::valueAt(double u, double v) {
     return data[x + (y * width)] != 0;
 }
 
-void Screen::clear() {
-    memset(pixBuf, 0, SIGN_WIDTH * SIGN_HEIGHT);
+Screen::Screen(int width, int height) {
+    this->width = width;
+    this->height = height;
+    this->pixBuf = (unsigned char *)malloc(width * height * sizeof(pixBuf[0]));
+    this->zBuf = (double *)malloc(width * height * sizeof(zBuf[0]));
+}
 
-    for (int i = 0; i < SIGN_WIDTH * SIGN_HEIGHT; i++) {
+Screen::~Screen() {
+    free(this->pixBuf);
+    free(this->zBuf);
+}
+
+void Screen::clear() {
+    memset(pixBuf, 0, width * height);
+
+    for (int i = 0; i < width * height; i++) {
         zBuf[i] = std::numeric_limits<double>::infinity();
     }
 }
@@ -129,6 +142,9 @@ void Screen::waitForVBlank() {
 }
 
 void Screen::renderFrame() {
+    // This only makes sense if we are the right size. Otherwise we may be used for textures.
+    if (width != SIGN_WIDTH || height != SIGN_HEIGHT) { return; }
+
     FILE *fp = fopen("/sign/frame.bin", "wb");
     if (fp != NULL) {
         (void)!fwrite(pixBuf, 1, SIGN_WIDTH * SIGN_HEIGHT, fp);
@@ -137,11 +153,11 @@ void Screen::renderFrame() {
 }
 
 bool Screen::_getPixel(int x, int y) {
-    return pixBuf[x + (y * SIGN_WIDTH)] != 0;
+    return pixBuf[x + (y * width)] != 0;
 }
 
 void Screen::drawPixel(int x, int y, double z, bool on) {
-    if (x < 0 || x >= SIGN_WIDTH || y < 0 || y >= SIGN_HEIGHT) {
+    if (x < 0 || x >= width || y < 0 || y >= height) {
         return;
     }
 
@@ -153,12 +169,12 @@ void Screen::drawPixel(int x, int y, double z, bool on) {
     if (z < 0.0) {
         return;
     }
-    if (z > zBuf[x + (y * SIGN_WIDTH)]) {
+    if (z > zBuf[x + (y * width)]) {
         return;
     }
 
-    pixBuf[x + (y * SIGN_WIDTH)] = on ? 1 : 0;
-    zBuf[x + (y * SIGN_WIDTH)] = z;
+    pixBuf[x + (y * width)] = on ? 1 : 0;
+    zBuf[x + (y * width)] = z;
 }
 
 void Screen::drawLine(int x0, int y0, double z0, int x1, int y1, double z1, bool on) {
@@ -246,8 +262,8 @@ void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firs
     int maxX = (int)MAX(MAX(first->x, second->x), third->x);
     int maxY = (int)MAX(MAX(first->y, second->y), third->y);
 
-    if (minX >= SIGN_WIDTH || maxX < 0) { return; }
-    if (minY >= SIGN_HEIGHT || maxY < 0) { return; }
+    if (minX >= width || maxX < 0) { return; }
+    if (minY >= height || maxY < 0) { return; }
 
     // Due to the way projectPoint works, each point is already in the form of X/W, Y/W, 1/W, so we can interpolate
     // UV coordinates based on the fact that perspective projects are linear in this coordinate system. So, we need
@@ -357,8 +373,8 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
     int maxX = (int)MAX(MAX(first->x, second->x), third->x);
     int maxY = (int)MAX(MAX(first->y, second->y), third->y);
 
-    if (minX >= SIGN_WIDTH || maxX < 0) { return; }
-    if (minY >= SIGN_HEIGHT || maxY < 0) { return; }
+    if (minX >= width || maxX < 0) { return; }
+    if (minY >= height || maxY < 0) { return; }
 
     // Due to the way projectPoint works, each point is already in the form of X/W, Y/W, 1/W, so we can interpolate
     // UV coordinates based on the fact that perspective projects are linear in this coordinate system. So, we need
@@ -443,7 +459,7 @@ void Screen::drawOccludedTri(Point *first, Point *second, Point *third) {
     if (_isBackFacing(first, second, third)) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the triangle.
-    Screen *tmpScreen = new Screen();
+    Screen *tmpScreen = new Screen(width, height);
     tmpScreen->clear();
     tmpScreen->drawTri(first, second, third, true);
 
@@ -457,7 +473,7 @@ void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *
     if (_isBackFacing(first, second, fourth)) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the quad.
-    Screen *tmpScreen = new Screen();
+    Screen *tmpScreen = new Screen(width, height);
     tmpScreen->clear();
     tmpScreen->drawQuad(first, second, third, fourth, true);
 
@@ -483,7 +499,7 @@ void Screen::drawOccludedPolygon(Point *points[], int length) {
     if (_isBackFacing(points[0], points[1], points[length - 1])) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the shape.
-    Screen *tmpScreen = new Screen();
+    Screen *tmpScreen = new Screen(width, height);
     tmpScreen->clear();
 
     for (int i = 0; i < length - 1; i++) {

@@ -3,11 +3,12 @@
 #include <cstring>
 #include "matrix.h"
 #include "raster.h"
+#include "common.h"
 
 int main (int argc, char *argv[]) {
     printf("Running cube tests...\n");
 
-    Screen *screen = new Screen();
+    Screen *screen = new Screen(SIGN_WIDTH, SIGN_HEIGHT);
     int count = 0;
 
     while ( 1 ) {
