@@ -61,6 +61,15 @@ class Screen {
         void drawOccludedQuad(Point *first, Point *second, Point *third, Point *fourth);
         void drawOccludedPolygon(Point *points[], int length);
 
+        void drawTexturedOccludedTri(Point *first, Point *second, Point *third, UV *firstTex, UV *secondTex, UV *thirdTex, Texture *tex);
+        void drawTexturedOccludedQuad(
+            Point *first, Point *second, Point *third, Point *fourth,
+            UV *firstTex, UV *secondTex, UV *thirdTex, UV *fourthTex,
+            Texture *tex
+        );
+        void drawTexturedOccludedPolygon(Point *points[], UV *uv[], int length, Texture *tex);
+
+
     private:
         bool _getPixel(int x, int y);
         bool _isBackFacing(Point *first, Point *second, Point *third);

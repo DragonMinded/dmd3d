@@ -498,3 +498,42 @@ void Screen::drawOccludedPolygon(Point *points[], int length) {
 
     delete tmpScreen;
 }
+
+void Screen::drawTexturedOccludedTri(Point *first, Point *second, Point *third, UV *firstTex, UV *secondTex, UV *thirdTex, Texture *tex) {
+    // Don't draw this if it is back-facing.
+    if (_isBackFacing(first, second, third)) { return; }
+
+    // Now, draw the texture to the screen.
+    drawTexturedTri(first, second, third, firstTex, secondTex, thirdTex, tex);
+}
+
+void Screen::drawTexturedOccludedQuad(
+    Point *first, Point *second, Point *third, Point *fourth,
+    UV *firstTex, UV *secondTex, UV *thirdTex, UV *fourthTex,
+    Texture *tex
+) {
+    // Don't draw this if it is back-facing.
+    if (_isBackFacing(first, second, fourth)) { return; }
+
+    // Now, draw the texture to the screen.
+    drawTexturedQuad(first, second, third, fourth, firstTex, secondTex, thirdTex, fourthTex, tex);
+}
+
+void Screen::drawTexturedOccludedPolygon(Point *points[], UV *uv[], int length, Texture *tex) {
+    // Don't draw this if it isn't at least a 3-poly.
+    if (length < 3) { return; }
+    if (length == 3) {
+        drawTexturedOccludedTri(points[0], points[1], points[2], uv[0], uv[1], uv[2], tex);
+        return;
+    }
+    if (length == 4) {
+        drawTexturedOccludedQuad(points[0], points[1], points[2], points[3], uv[0], uv[1], uv[2], uv[3], tex);
+        return;
+    }
+
+    // Don't draw this if it is back-facing.
+    if (_isBackFacing(points[0], points[1], points[length - 1])) { return; }
+
+    // Now, draw the texture to the screen.
+    drawTexturedPolygon(points, uv, length, tex);
+}

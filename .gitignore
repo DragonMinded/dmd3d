@@ -12,5 +12,6 @@ cubetest
 recttest
 polytest
 textest
+texcubetest
 libwiringx.a
 wiringx.h
