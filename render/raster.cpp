@@ -13,20 +13,48 @@ UV::UV(double u, double v) {
     this->v = v;
 }
 
-Texture::Texture(int width, int height) {
-    this->width = width;
-    this->height = height;
-    this->data = (unsigned char *)malloc(width * height);
-    this->managed = 1;
-    this->mode = CLAMP_MODE_NORMAL;
-}
-
 Texture::Texture(int width, int height, unsigned char data[]) {
     this->width = width;
     this->height = height;
-    this->data = data;
-    this->managed = 0;
     this->mode = CLAMP_MODE_NORMAL;
+
+    this->managed = 1;
+    this->data = (unsigned char *)malloc(width * height);
+    memcpy(this->data, data, width * height);
+}
+
+Texture::Texture(const char * const filename) {
+    // First, assume failure loading the texture.
+    this->width = 0;
+    this->height = 0;
+    this->managed = 0;
+    this->data = 0;
+    this->mode = CLAMP_MODE_NORMAL;
+
+    // Now, actually load it.
+    char cmd[1024];
+    sprintf(cmd, "python3 texload.py \"%s\"", filename);
+
+    FILE *pipe = popen(cmd, "r");
+    if (pipe != NULL) {
+        // First read the dimensions.
+        short width = 0;
+        short height = 0;
+
+        (void)!fread(&width, 1, sizeof(width), pipe);
+        (void)!fread(&height, 1, sizeof(height), pipe);
+
+        if (width > 0 && height > 0) {
+            this->width = width;
+            this->height = height;
+            this->managed = 1;
+            this->data = (unsigned char *)malloc(width * height);
+
+            (void)!fread(this->data, 1, width * height, pipe);
+        }
+
+        pclose(pipe);
+    }
 }
 
 Texture::~Texture() {
@@ -48,7 +76,9 @@ void Texture::setClampMode(int mode) {
     }
 }
 
-unsigned char Texture::valueAt(double u, double v) {
+bool Texture::valueAt(double u, double v) {
+    if (data == 0) { return false; }
+
     switch (mode) {
         case CLAMP_MODE_NORMAL:
             if (u < 0.0) { u = 0.0; }
@@ -62,10 +92,10 @@ unsigned char Texture::valueAt(double u, double v) {
             return 0;
     }
 
-    int x = (int)(u * (double)(width - 1));
-    int y = (int)(v * (double)(height - 1));
+    int x = (int)(u * (double)width);
+    int y = (int)(v * (double)height);
 
-    return data[x + (y * width)];
+    return data[x + (y * width)] != 0;
 }
 
 void Screen::clear() {
@@ -232,20 +262,33 @@ void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firs
     xyMatrix->a42 = first->y;
     xyMatrix->invert();
 
-    Matrix *xywMatrix = new Matrix();
-    xywMatrix->a11 = second->x - first->x;
-    xywMatrix->a12 = second->y - first->y;
-    xywMatrix->a13 = second->z - first->z;
-    xywMatrix->a21 = third->x - first->x;
-    xywMatrix->a22 = third->y - first->y;
-    xywMatrix->a23 = third->z - first->z;
-    xywMatrix->a41 = first->x;
-    xywMatrix->a42 = first->y;
-    xywMatrix->a43 = first->z;
+    // Heuristic/hack to support affine tranformation rendering using the same function.
+    double firstW = first->z;
+    double secondW = second->z;
+    double thirdW = third->z;
+    bool isAffine = false;
+    if (firstW == 0.0 && secondW == 0.0 && thirdW == 0.0)
+    {
+        firstW = 1.0;
+        secondW = 1.0;
+        thirdW = 1.0;
+        isAffine = true;
+    }
+
+    Matrix *uvwMatrix = new Matrix();
+    uvwMatrix->a11 = (secondTex->u * secondW) - (firstTex->u * firstW);
+    uvwMatrix->a12 = (secondTex->v * secondW) - (firstTex->v * firstW);
+    uvwMatrix->a13 = secondW - firstW;
+    uvwMatrix->a21 = (thirdTex->u * thirdW) - (firstTex->u * firstW);
+    uvwMatrix->a22 = (thirdTex->v * thirdW) - (firstTex->v * firstW);
+    uvwMatrix->a23 = thirdW - firstW;
+    uvwMatrix->a41 = firstTex->u * firstW;
+    uvwMatrix->a42 = firstTex->v * firstW;
+    uvwMatrix->a43 = firstW;
 
     for (int y = minY; y <= maxY; y++) {
         for (int x = minX; x <= maxX; x++) {
-            Point *curPoint = new Point(x, y, 0.0);
+            Point *curPoint = new Point(x + 0.5, y + 0.5, 0.0);
             Point *triPoint = xyMatrix->multiplyPoint(curPoint);
 
             // Make sure that we stay within bounds of the triangle.
@@ -265,16 +308,19 @@ void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firs
                 continue;
             }
 
-            // TODO: Figure out the 1/W coordinate for this pixel.
-            Point *actualPoint = xywMatrix->multiplyPoint(triPoint);
-            drawPixel(x, y, actualPoint->z, false);
-            delete actualPoint;
+            // Figure out the 1/W UV coordinates for this pixel.
+            Point *uvInvPoint = uvwMatrix->multiplyPoint(triPoint);
+            double u = uvInvPoint->x / uvInvPoint->z;
+            double v = uvInvPoint->y / uvInvPoint->z;
+
+            drawPixel(x, y, isAffine ? 0.0 : uvInvPoint->z, tex->valueAt(u, v));
+            delete uvInvPoint;
             delete triPoint;
             delete curPoint;
         }
     }
 
-    delete xywMatrix;
+    delete uvwMatrix;
     delete xyMatrix;
 }
 

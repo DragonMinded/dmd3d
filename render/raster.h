@@ -20,13 +20,13 @@ class UV {
 
 class Texture {
     public:
-        Texture(int width, int height);
         Texture(int width, int height, unsigned char data[]);
+        Texture(const char * const filename);
         ~Texture();
 
         void setClampMode(int mode);
 
-        unsigned char valueAt(double u, double v);
+        bool valueAt(double u, double v);
 
     private:
         int width;
