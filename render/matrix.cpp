@@ -33,7 +33,7 @@ Matrix::Matrix(int width, int height, double fov, double zNear, double zFar) {
     double halfwidth = width / 2.0;
     double halfheight = height / 2.0;
 
-    a11 = halfwidth;
+    a11 = -halfwidth;
     a12 = 0.0;
     a13 = 0.0;
     a14 = 0.0;

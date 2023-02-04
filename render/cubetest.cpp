@@ -20,20 +20,20 @@ int main (int argc, char *argv[]) {
         // Set up our throbbing cube.
         double val = (0.5 + (sin((count / 30.0) * M_PI) / 16.0));
         Point *leftCoords[8] = {
-            new Point(-val, -val, -val),
-            new Point( val, -val, -val),
-            new Point( val,  val, -val),
             new Point(-val,  val, -val),
-            new Point(-val, -val,  val),
-            new Point( val, -val,  val),
-            new Point( val,  val,  val),
+            new Point( val,  val, -val),
+            new Point( val, -val, -val),
+            new Point(-val, -val, -val),
             new Point(-val,  val,  val),
+            new Point( val,  val,  val),
+            new Point( val, -val,  val),
+            new Point(-val, -val,  val),
         };
 
         // Manipulate location of object in world.
         Matrix *effectsMatrix = new Matrix();
         effectsMatrix->translateZ(2.75);
-        effectsMatrix->translateX(1.0);
+        effectsMatrix->translateX(-1.0);
         effectsMatrix->rotateX(60 + (count * 1.0));
         effectsMatrix->rotateY(30 + (count * 1.1));
         effectsMatrix->multiplyPoints(leftCoords, sizeof(leftCoords) / sizeof(leftCoords[0]));
@@ -52,20 +52,20 @@ int main (int argc, char *argv[]) {
 
         // Set up our second throbbing cube, this time with culling of wireframe stuff.
         Point *rightCoords[8] = {
-            new Point(-val, -val, -val),
-            new Point( val, -val, -val),
-            new Point( val,  val, -val),
             new Point(-val,  val, -val),
-            new Point(-val, -val,  val),
-            new Point( val, -val,  val),
-            new Point( val,  val,  val),
+            new Point( val,  val, -val),
+            new Point( val, -val, -val),
+            new Point(-val, -val, -val),
             new Point(-val,  val,  val),
+            new Point( val,  val,  val),
+            new Point( val, -val,  val),
+            new Point(-val, -val,  val),
         };
 
         // Manipulate location of object in world.
         effectsMatrix = new Matrix();
         effectsMatrix->translateZ(2.75);
-        effectsMatrix->translateX(-1.0);
+        effectsMatrix->translateX(1.0);
         effectsMatrix->rotateX(60 + (count * 1.2));
         effectsMatrix->rotateY(30 + (count * 1.3));
         effectsMatrix->multiplyPoints(rightCoords, sizeof(rightCoords) / sizeof(rightCoords[0]));
