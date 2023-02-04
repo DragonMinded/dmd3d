@@ -19,7 +19,7 @@ int main (int argc, char *argv[]) {
 
         // Set up our throbbing cube.
         double val = (0.5 + (sin((count / 30.0) * M_PI) / 16.0));
-        Point *leftCoords[8] = {
+        Point *leftCoords[] = {
             new Point(-val,  val, -val),
             new Point( val,  val, -val),
             new Point( val, -val, -val),
@@ -51,7 +51,7 @@ int main (int argc, char *argv[]) {
         screen->drawLine(leftCoords[3], leftCoords[7], true);
 
         // Set up our second throbbing cube, this time with culling of wireframe stuff.
-        Point *rightCoords[8] = {
+        Point *rightCoords[] = {
             new Point(-val,  val, -val),
             new Point( val,  val, -val),
             new Point( val, -val, -val),

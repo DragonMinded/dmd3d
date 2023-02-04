@@ -116,7 +116,9 @@ void Screen::drawPixel(int x, int y, double z, bool on) {
     }
 
     // Z is technically 1/W, where W is -Z, so invert it.
-    z = -1 / z;
+    if (z != 0.0) {
+        z = -1 / z;
+    }
 
     if (z < 0.0) {
         return;
@@ -185,6 +187,26 @@ void Screen::drawQuad(Point *first, Point *second, Point *third, Point *fourth, 
     drawLine(second, third, on);
     drawLine(third, fourth, on);
     drawLine(fourth, first, on);
+}
+
+void Screen::drawArbitraryPolygon(Point *points[], int length, bool on) {
+    // Don't draw this if it isn't at least a 3-poly.
+    if (length < 3) { return; }
+    if (length == 3) {
+        drawTri(points[0], points[1], points[2], on);
+        return;
+    }
+    if (length == 4) {
+        drawQuad(points[0], points[1], points[2], points[3], on);
+        return;
+    }
+
+    // Arbitrary quad takeover here.
+    for (int i = 0; i < length - 1; i++) {
+        drawLine(points[i], points[i + 1], on);
+    }
+
+    drawLine(points[length - 1], points[0], on);
 }
 
 void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firstTex, UV *secondTex, UV *thirdTex, Texture *tex) {
@@ -379,5 +401,37 @@ void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *
     // Now, draw the "texture" in two quads.
     _drawOccludedTri(first, second, fourth, tmpScreen);
     _drawOccludedTri(second, third, fourth, tmpScreen);
+    delete tmpScreen;
+}
+
+void Screen::drawOccludedArbitraryPolygon(Point *points[], int length) {
+    // Don't draw this if it isn't at least a 3-poly.
+    if (length < 3) { return; }
+    if (length == 3) {
+        drawOccludedTri(points[0], points[1], points[2]);
+        return;
+    }
+    if (length == 4) {
+        drawOccludedQuad(points[0], points[1], points[2], points[3]);
+        return;
+    }
+
+    // Don't draw this if it is back-facing.
+    if (_isBackFacing(points[0], points[1], points[length - 1])) { return; }
+
+    // First, we draw the border, so that we have the "texture" to pull from when we want to outline the shape.
+    Screen *tmpScreen = new Screen();
+    tmpScreen->clear();
+
+    for (int i = 0; i < length - 1; i++) {
+        tmpScreen->drawLine(points[i], points[i + 1], true);
+    }
+    tmpScreen->drawLine(points[length - 1], points[0], true);
+
+    // Now, draw the "texture" in length-2 triangles.
+    for (int i = 0; i < length - 2; i++) {
+        _drawOccludedTri(points[i], points[i + 1], points[length - 1], tmpScreen);
+    }
+
     delete tmpScreen;
 }

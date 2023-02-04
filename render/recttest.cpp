@@ -16,7 +16,7 @@ int main (int argc, char *argv[]) {
         screen->clear();
 
         // Set up a square and then rotate it in place.
-        Point *coords[4] = {
+        Point *coords[] = {
             new Point(42, 10, 0),
             new Point(86, 10, 0),
             new Point(86, 54, 0),
