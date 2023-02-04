@@ -13,5 +13,6 @@ recttest
 polytest
 textest
 texcubetest
+screentest
 libwiringx.a
 wiringx.h

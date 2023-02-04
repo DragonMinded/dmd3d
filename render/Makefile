@@ -1,4 +1,4 @@
-all: matrixtest recttest cubetest polytest textest texcubetest
+all: matrixtest recttest cubetest polytest textest texcubetest screentest
 
 matrixtest: matrix.cpp matrix.h matrixtest.cpp
 	g++ -O3 -o matrixtest matrix.cpp matrixtest.cpp
@@ -18,6 +18,9 @@ textest: matrix.cpp matrix.h raster.cpp raster.h textest.cpp
 texcubetest: matrix.cpp matrix.h raster.cpp raster.h texcubetest.cpp
 	g++ -O3 -o texcubetest matrix.cpp raster.cpp texcubetest.cpp
 
+screentest: matrix.cpp matrix.h raster.cpp raster.h screentest.cpp
+	g++ -O3 -o screentest matrix.cpp raster.cpp screentest.cpp
+
 .PHONY: clean
 clean:
 	rm -rf matrixtest
@@ -26,3 +29,4 @@ clean:
 	rm -rf polytest
 	rm -rf textest
 	rm -rf texcubetest
+	rm -rf screentest

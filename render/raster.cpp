@@ -99,9 +99,7 @@ bool Texture::valueAt(double u, double v) {
     return data[x + (y * width)] != 0;
 }
 
-Screen::Screen(int width, int height) {
-    this->width = width;
-    this->height = height;
+Screen::Screen(int reqWidth, int reqHeight) : width(reqWidth), height(reqHeight) {
     this->pixBuf = (unsigned char *)malloc(width * height * sizeof(pixBuf[0]));
     this->zBuf = (double *)malloc(width * height * sizeof(zBuf[0]));
 }
@@ -150,6 +148,10 @@ void Screen::renderFrame() {
         (void)!fwrite(pixBuf, 1, SIGN_WIDTH * SIGN_HEIGHT, fp);
         fclose(fp);
     }
+}
+
+Texture *Screen::renderTexture() {
+    return new Texture(width, height, pixBuf);
 }
 
 bool Screen::_getPixel(int x, int y) {

@@ -42,6 +42,8 @@ class Screen {
         void waitForVBlank();
         void renderFrame();
 
+        Texture *renderTexture();
+
         void drawPixel(int x, int y, double z, bool on);
         void drawLine(int x0, int y0, double z0, int x1, int y1, double z1, bool on);
         void drawLine(Point *first, Point *second, bool on);
@@ -69,14 +71,13 @@ class Screen {
         );
         void drawTexturedOccludedPolygon(Point *points[], UV *uv[], int length, Texture *tex);
 
-
+        const int width;
+        const int height;
     private:
         bool _getPixel(int x, int y);
         bool _isBackFacing(Point *first, Point *second, Point *third);
         void _drawOccludedTri(Point *first, Point *second, Point *third, Screen *outline);
 
-        int width;
-        int height;
         unsigned char *pixBuf;
         double *zBuf;
 };
