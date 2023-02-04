@@ -6,7 +6,7 @@
 #include "common.h"
 
 int main (int argc, char *argv[]) {
-    printf("Running poly tests...\n");
+    printf("Running view port tests...\n");
 
     Screen *screen = new Screen(SIGN_WIDTH, SIGN_HEIGHT);
     int count = 0;
