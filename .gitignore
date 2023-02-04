@@ -10,5 +10,6 @@ driver
 matrixtest
 cubetest
 recttest
+polytest
 libwiringx.a
 wiringx.h
