@@ -50,8 +50,8 @@ int main (int argc, char *argv[]) {
         viewMatrix->projectPoints(leftCoords, sizeof(leftCoords) / sizeof(leftCoords[0]));
 
         // Draw the polygons.
-        screen->drawArbitraryPolygon(&leftCoords[0], 6, true);
-        screen->drawArbitraryPolygon(&leftCoords[6], 6, true);
+        screen->drawPolygon(&leftCoords[0], 6, true);
+        screen->drawPolygon(&leftCoords[6], 6, true);
 
         // Draw the squares between each bit, which is "fun" to work out.
         screen->drawQuad(leftCoords[0], leftCoords[11], leftCoords[10], leftCoords[1], true);
@@ -94,8 +94,8 @@ int main (int argc, char *argv[]) {
         viewMatrix->projectPoints(rightCoords, sizeof(rightCoords) / sizeof(rightCoords[0]));
 
         // Draw the polygons.
-        screen->drawOccludedArbitraryPolygon(&rightCoords[0], 6);
-        screen->drawOccludedArbitraryPolygon(&rightCoords[6], 6);
+        screen->drawOccludedPolygon(&rightCoords[0], 6);
+        screen->drawOccludedPolygon(&rightCoords[6], 6);
 
         // Draw the squares between each bit, which is "fun" to work out.
         screen->drawOccludedQuad(rightCoords[0], rightCoords[11], rightCoords[10], rightCoords[1]);

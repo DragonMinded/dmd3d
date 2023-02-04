@@ -219,7 +219,7 @@ void Screen::drawQuad(Point *first, Point *second, Point *third, Point *fourth, 
     drawLine(fourth, first, on);
 }
 
-void Screen::drawArbitraryPolygon(Point *points[], int length, bool on) {
+void Screen::drawPolygon(Point *points[], int length, bool on) {
     // Don't draw this if it isn't at least a 3-poly.
     if (length < 3) { return; }
     if (length == 3) {
@@ -231,7 +231,7 @@ void Screen::drawArbitraryPolygon(Point *points[], int length, bool on) {
         return;
     }
 
-    // Arbitrary quad takeover here.
+    // Draw each individual line outlining the polygon.
     for (int i = 0; i < length - 1; i++) {
         drawLine(points[i], points[i + 1], on);
     }
@@ -331,6 +331,23 @@ void Screen::drawTexturedQuad(
 ) {
     drawTexturedTri(first, second, fourth, firstTex, secondTex, fourthTex, tex);
     drawTexturedTri(second, third, fourth, secondTex, thirdTex, fourthTex, tex);
+}
+
+void Screen::drawTexturedPolygon(Point *points[], UV *uv[], int length, Texture *tex) {
+    if (length < 3) { return; }
+    if (length == 3) {
+        drawTexturedTri(points[0], points[1], points[2], uv[0], uv[1], uv[2], tex);
+        return;
+    }
+    if (length == 4) {
+        drawTexturedQuad(points[0], points[1], points[2], points[3], uv[0], uv[1], uv[2], uv[3], tex);
+        return;
+    }
+
+    // Draw the textured polygon. in length-2 triangles.
+    for (int i = 0; i < length - 2; i++) {
+        drawTexturedTri(points[i], points[i + 1], points[length - 1], uv[i], uv[i + 1], uv[length - 1], tex);
+    }
 }
 
 void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen *screen) {
@@ -450,7 +467,7 @@ void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *
     delete tmpScreen;
 }
 
-void Screen::drawOccludedArbitraryPolygon(Point *points[], int length) {
+void Screen::drawOccludedPolygon(Point *points[], int length) {
     // Don't draw this if it isn't at least a 3-poly.
     if (length < 3) { return; }
     if (length == 3) {

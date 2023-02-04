@@ -47,7 +47,7 @@ class Screen {
         void drawLine(Point *first, Point *second, bool on);
         void drawTri(Point *first, Point *second, Point *third, bool on);
         void drawQuad(Point *first, Point *second, Point *third, Point *fourth, bool on);
-        void drawArbitraryPolygon(Point *points[], int length, bool on);
+        void drawPolygon(Point *points[], int length, bool on);
 
         void drawTexturedTri(Point *first, Point *second, Point *third, UV *firstTex, UV *secondTex, UV *thirdTex, Texture *tex);
         void drawTexturedQuad(
@@ -55,10 +55,11 @@ class Screen {
             UV *firstTex, UV *secondTex, UV *thirdTex, UV *fourthTex,
             Texture *tex
         );
+        void drawTexturedPolygon(Point *points[], UV *uv[], int length, Texture *tex);
 
         void drawOccludedTri(Point *first, Point *second, Point *third);
         void drawOccludedQuad(Point *first, Point *second, Point *third, Point *fourth);
-        void drawOccludedArbitraryPolygon(Point *points[], int length);
+        void drawOccludedPolygon(Point *points[], int length);
 
     private:
         bool _getPixel(int x, int y);
