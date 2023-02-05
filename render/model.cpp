@@ -1,6 +1,8 @@
+#include <cmath>
 #include <cstdlib>
 #include "model.h"
 #include "matrix.h"
+#include "common.h"
 
 #define STL_READER_NO_EXCEPTIONS  1
 #include "stl_reader.h"
@@ -136,4 +138,50 @@ void Model::draw(Screen *screen) {
     for (int i = 0; i < modelLength; i++) {
         polygons[i]->draw(screen);
     }
+}
+
+Point *Model::getOrigin() {
+    double minX, maxX;
+    double minY, maxY;
+    double minZ, maxZ;
+
+    minX = maxX = polygons[0]->transPoints[0]->x;
+    minY = maxY = polygons[0]->transPoints[0]->y;
+    minZ = maxZ = polygons[0]->transPoints[0]->z;
+
+    for (int i = 0; i < modelLength; i++) {
+        for (int j = 0; j < polygons[i]->polyLength; j++) {
+            minX = MIN(minX, polygons[i]->transPoints[j]->x);
+            maxX = MAX(maxX, polygons[i]->transPoints[j]->x);
+            minY = MIN(minY, polygons[i]->transPoints[j]->y);
+            maxY = MAX(maxY, polygons[i]->transPoints[j]->y);
+            minZ = MIN(minZ, polygons[i]->transPoints[j]->z);
+            maxZ = MAX(maxZ, polygons[i]->transPoints[j]->z);
+        }
+    }
+
+    return new Point((minX + maxX) / 2.0, (minY + maxY) / 2.0, (minZ + maxZ) / 2.0);
+}
+
+Point *Model::getDimensions() {
+    double minX, maxX;
+    double minY, maxY;
+    double minZ, maxZ;
+
+    minX = maxX = polygons[0]->transPoints[0]->x;
+    minY = maxY = polygons[0]->transPoints[0]->y;
+    minZ = maxZ = polygons[0]->transPoints[0]->z;
+
+    for (int i = 0; i < modelLength; i++) {
+        for (int j = 0; j < polygons[i]->polyLength; j++) {
+            minX = MIN(minX, polygons[i]->transPoints[j]->x);
+            maxX = MAX(maxX, polygons[i]->transPoints[j]->x);
+            minY = MIN(minY, polygons[i]->transPoints[j]->y);
+            maxY = MAX(maxY, polygons[i]->transPoints[j]->y);
+            minZ = MIN(minZ, polygons[i]->transPoints[j]->z);
+            maxZ = MAX(maxZ, polygons[i]->transPoints[j]->z);
+        }
+    }
+
+    return new Point(fabs(maxX - minX), fabs(maxY - minY), fabs(maxZ - minZ));
 }

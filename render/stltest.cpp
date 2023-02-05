@@ -14,6 +14,11 @@ int main (int argc, char *argv[]) {
 
     // Load the model.
     Model *model = new Model("testmodel.stl");
+    Point *origin = model->getOrigin();
+
+    Point *dimensions = model->getDimensions();
+    double maxDimension = MAX(MAX(dimensions->x, dimensions->y), dimensions->z) / 1.75;
+    delete dimensions;
 
     while ( 1 ) {
         // Set up our pixel buffer.
@@ -21,7 +26,7 @@ int main (int argc, char *argv[]) {
         model->reset();
 
         // Set up the view matrix.
-        Matrix *viewMatrix = new Matrix(SIGN_WIDTH, SIGN_HEIGHT, 90.0, 1.0, 1000.0);
+        Matrix *viewMatrix = new Matrix(SIGN_WIDTH, SIGN_HEIGHT, 60.0, 1.0, 1000.0);
 
         // Manipulate location of object in world.
         Matrix *effectsMatrix = new Matrix();
@@ -29,12 +34,14 @@ int main (int argc, char *argv[]) {
         // Move it back into the screen so it's visible.
         effectsMatrix->translateZ(2.5);
 
+        // Get it in the center, normalize its size.
+        effectsMatrix->scale(1.0 / maxDimension, 1.0 / maxDimension, 1.0 / maxDimension);
+
         // Rotate it about its origin randomly.
+        effectsMatrix->translateZ(origin->z);
         effectsMatrix->rotateX((count * 0.2));
         effectsMatrix->rotateY((count * 2.5));
-
-        // Get it in the center.
-        effectsMatrix->translate(-0.5, -0.5, -0.5);
+        effectsMatrix->translate(-origin->x, -origin->y, -origin->z);
 
         // Transform the full cube based on our effects above (in reverse order).
         model->transform(effectsMatrix);

@@ -6,9 +6,6 @@
 #include "raster.h"
 #include "common.h"
 
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-
 UV::UV(double reqU, double reqV) : u(reqU), v(reqV) {
     // Basically a struct with read-only members.
 }
