@@ -132,7 +132,7 @@ bool Texture::valueAt(double u, double v) {
 Screen::Screen(int reqWidth, int reqHeight) : width(reqWidth), height(reqHeight) {
     this->pixBuf = (unsigned char *)malloc(width * height * sizeof(pixBuf[0]));
     this->zBuf = (double *)malloc(width * height * sizeof(zBuf[0]));
-    this->normalOrder = NORMAL_ORDER_CW;
+    this->normalOrder = NORMAL_ORDER_CCW;
 }
 
 Screen::~Screen() {
@@ -195,6 +195,10 @@ Texture *Screen::renderTexture() {
 }
 
 bool Screen::_getPixel(int x, int y) {
+    if (x < 0 || x >= width || y < 0 || y >= height) {
+        return false;
+    }
+
     return pixBuf[x + (y * width)] != 0;
 }
 
@@ -311,14 +315,14 @@ void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firs
     // UV coordinates based on the fact that perspective projects are linear in this coordinate system. So, we need
     // to construct a matrix that will, given a screen X/Y coordinate will work us back to the virtual U/V coordinate
     // of where we fall on the triangle.
-    Matrix *xyMatrix = new Matrix();
-    xyMatrix->a11 = second->x - first->x;
-    xyMatrix->a12 = second->y - first->y;
-    xyMatrix->a21 = third->x - first->x;
-    xyMatrix->a22 = third->y - first->y;
-    xyMatrix->a41 = first->x;
-    xyMatrix->a42 = first->y;
-    xyMatrix->invert();
+    Matrix xyMatrix;
+    xyMatrix.a11 = second->x - first->x;
+    xyMatrix.a12 = second->y - first->y;
+    xyMatrix.a21 = third->x - first->x;
+    xyMatrix.a22 = third->y - first->y;
+    xyMatrix.a41 = first->x;
+    xyMatrix.a42 = first->y;
+    xyMatrix.invert();
 
     // Heuristic/hack to support affine tranformation rendering using the same function.
     double firstW = first->z;
@@ -346,22 +350,19 @@ void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firs
 
     for (int y = minY; y <= maxY; y++) {
         for (int x = minX; x <= maxX; x++) {
-            Point *curPoint = new Point(x + 0.5, y + 0.5, 0.0);
-            Point *triPoint = xyMatrix->multiplyPoint(curPoint);
+            Point curPoint(x + 0.5, y + 0.5, 0.0);
+            Point *triPoint = xyMatrix.multiplyPoint(&curPoint);
 
             // Make sure that we stay within bounds of the triangle.
             if (triPoint->x < 0.0 || triPoint->x > 1.0) {
-                delete curPoint;
                 delete triPoint;
                 continue;
             }
             if (triPoint->y < 0.0 || triPoint->y > 1.0) {
-                delete curPoint;
                 delete triPoint;
                 continue;
             }
             if (triPoint->y > (1.0 - triPoint->x)) {
-                delete curPoint;
                 delete triPoint;
                 continue;
             }
@@ -374,12 +375,10 @@ void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firs
             drawPixel(x, y, isAffine ? 0.0 : uvInvPoint->z, tex->valueAt(u, v));
             delete uvInvPoint;
             delete triPoint;
-            delete curPoint;
         }
     }
 
     delete uvwMatrix;
-    delete xyMatrix;
 }
 
 void Screen::drawTexturedQuad(
@@ -422,14 +421,14 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
     // UV coordinates based on the fact that perspective projects are linear in this coordinate system. So, we need
     // to construct a matrix that will, given a screen X/Y coordinate will work us back to the virtual U/V coordinate
     // of where we fall on the triangle.
-    Matrix *xyMatrix = new Matrix();
-    xyMatrix->a11 = second->x - first->x;
-    xyMatrix->a12 = second->y - first->y;
-    xyMatrix->a21 = third->x - first->x;
-    xyMatrix->a22 = third->y - first->y;
-    xyMatrix->a41 = first->x;
-    xyMatrix->a42 = first->y;
-    xyMatrix->invert();
+    Matrix xyMatrix;
+    xyMatrix.a11 = second->x - first->x;
+    xyMatrix.a12 = second->y - first->y;
+    xyMatrix.a21 = third->x - first->x;
+    xyMatrix.a22 = third->y - first->y;
+    xyMatrix.a41 = first->x;
+    xyMatrix.a42 = first->y;
+    xyMatrix.invert();
 
     Matrix *xywMatrix = new Matrix();
     xywMatrix->a11 = second->x - first->x;
@@ -444,8 +443,8 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
 
     for (int y = minY; y <= maxY; y++) {
         for (int x = minX; x <= maxX; x++) {
-            Point *curPoint = new Point(x + 0.5, y + 0.5, 0.0);
-            Point *triPoint = xyMatrix->multiplyPoint(curPoint);
+            Point curPoint(x + 0.5, y + 0.5, 0.0);
+            Point *triPoint = xyMatrix.multiplyPoint(&curPoint);
 
             // Cheeky hack to make sure we always draw the bounding box itself.
             // We know where it should be, so rounding errors where the inverse
@@ -455,17 +454,14 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
             if (!isSet) {
                 // Make sure that we stay within bounds of the triangle.
                 if (triPoint->x < 0.0 || triPoint->x > 1.0) {
-                    delete curPoint;
                     delete triPoint;
                     continue;
                 }
                 if (triPoint->y < 0.0 || triPoint->y > 1.0) {
-                    delete curPoint;
                     delete triPoint;
                     continue;
                 }
                 if (triPoint->y > (1.0 - triPoint->x)) {
-                    delete curPoint;
                     delete triPoint;
                     continue;
                 }
@@ -476,17 +472,15 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
             drawPixel(x, y, actualPoint->z, isSet);
             delete actualPoint;
             delete triPoint;
-            delete curPoint;
         }
     }
 
     delete xywMatrix;
-    delete xyMatrix;
 }
 
 bool Screen::_isBackFacing(Point *first, Point *second, Point *third) {
-    if (normalOrder == NORMAL_ORDER_CW) {
-        // We are a CW system, not a CCW system, so the first vector is first->third.
+    if (normalOrder == NORMAL_ORDER_CCW) {
+        // We are a CCW system, not a CW system, so the first vector is first->third.
         double ax = third->x - first->x;
         double ay = third->y - first->y;
 
@@ -496,7 +490,7 @@ bool Screen::_isBackFacing(Point *first, Point *second, Point *third) {
         // We just need the Z axis from the cross product.
         return ((ax * by) - (ay * bx)) > 0.0;
     } else {
-        // We are a CCW system, not a CW system, so the first vector is first->second.
+        // We are a CW system, not a CCW system, so the first vector is first->second.
         double ax = second->x - first->x;
         double ay = second->y - first->y;
 

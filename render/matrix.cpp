@@ -106,7 +106,7 @@ void Matrix::projectPoints(Point *points[], int length) {
 
 Matrix *Matrix::translate(double x, double y, double z) {
     Point *point = new Point(x, y, z);
-    translate(point->x, point->y, point->z);
+    translate(point);
 
     delete point;
 

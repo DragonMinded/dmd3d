@@ -5,6 +5,7 @@
 *.webm
 *.webp
 *.png
+*.stl
 frame.bin
 driver
 matrixtest
@@ -14,5 +15,6 @@ polytest
 textest
 texcubetest
 screentest
+stltest
 libwiringx.a
 wiringx.h
