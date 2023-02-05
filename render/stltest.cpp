@@ -17,7 +17,7 @@ int main (int argc, char *argv[]) {
     Point *origin = model->getOrigin();
 
     Point *dimensions = model->getDimensions();
-    double maxDimension = MAX(MAX(dimensions->x, dimensions->y), dimensions->z) / 1.75;
+    double maxDimension = MAX(MAX(dimensions->x, dimensions->y), dimensions->z) / 2.25;
     delete dimensions;
 
     while ( 1 ) {
