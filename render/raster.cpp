@@ -133,11 +133,16 @@ Screen::Screen(int reqWidth, int reqHeight) : width(reqWidth), height(reqHeight)
     this->pixBuf = (unsigned char *)malloc(width * height * sizeof(pixBuf[0]));
     this->zBuf = (double *)malloc(width * height * sizeof(zBuf[0]));
     this->normalOrder = NORMAL_ORDER_CCW;
+    this->maskScreen = 0;
 }
 
 Screen::~Screen() {
     free(this->pixBuf);
     free(this->zBuf);
+    if (this->maskScreen) {
+        delete this->maskScreen;
+        this->maskScreen = 0;
+    }
 }
 
 void Screen::setNormalOrder(int normalOrder) {
@@ -337,16 +342,16 @@ void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firs
         isAffine = true;
     }
 
-    Matrix *uvwMatrix = new Matrix();
-    uvwMatrix->a11 = (secondTex->u * secondW) - (firstTex->u * firstW);
-    uvwMatrix->a12 = (secondTex->v * secondW) - (firstTex->v * firstW);
-    uvwMatrix->a13 = secondW - firstW;
-    uvwMatrix->a21 = (thirdTex->u * thirdW) - (firstTex->u * firstW);
-    uvwMatrix->a22 = (thirdTex->v * thirdW) - (firstTex->v * firstW);
-    uvwMatrix->a23 = thirdW - firstW;
-    uvwMatrix->a41 = firstTex->u * firstW;
-    uvwMatrix->a42 = firstTex->v * firstW;
-    uvwMatrix->a43 = firstW;
+    Matrix uvwMatrix;
+    uvwMatrix.a11 = (secondTex->u * secondW) - (firstTex->u * firstW);
+    uvwMatrix.a12 = (secondTex->v * secondW) - (firstTex->v * firstW);
+    uvwMatrix.a13 = secondW - firstW;
+    uvwMatrix.a21 = (thirdTex->u * thirdW) - (firstTex->u * firstW);
+    uvwMatrix.a22 = (thirdTex->v * thirdW) - (firstTex->v * firstW);
+    uvwMatrix.a23 = thirdW - firstW;
+    uvwMatrix.a41 = firstTex->u * firstW;
+    uvwMatrix.a42 = firstTex->v * firstW;
+    uvwMatrix.a43 = firstW;
 
     for (int y = minY; y <= maxY; y++) {
         for (int x = minX; x <= maxX; x++) {
@@ -368,7 +373,7 @@ void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firs
             }
 
             // Figure out the 1/W UV coordinates for this pixel.
-            Point *uvInvPoint = uvwMatrix->multiplyPoint(triPoint);
+            Point *uvInvPoint = uvwMatrix.multiplyPoint(triPoint);
             double u = uvInvPoint->x / uvInvPoint->z;
             double v = uvInvPoint->y / uvInvPoint->z;
 
@@ -377,8 +382,6 @@ void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firs
             delete triPoint;
         }
     }
-
-    delete uvwMatrix;
 }
 
 void Screen::drawTexturedQuad(
@@ -430,16 +433,16 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
     xyMatrix.a42 = first->y;
     xyMatrix.invert();
 
-    Matrix *xywMatrix = new Matrix();
-    xywMatrix->a11 = second->x - first->x;
-    xywMatrix->a12 = second->y - first->y;
-    xywMatrix->a13 = second->z - first->z;
-    xywMatrix->a21 = third->x - first->x;
-    xywMatrix->a22 = third->y - first->y;
-    xywMatrix->a23 = third->z - first->z;
-    xywMatrix->a41 = first->x;
-    xywMatrix->a42 = first->y;
-    xywMatrix->a43 = first->z;
+    Matrix xywMatrix;
+    xywMatrix.a11 = second->x - first->x;
+    xywMatrix.a12 = second->y - first->y;
+    xywMatrix.a13 = second->z - first->z;
+    xywMatrix.a21 = third->x - first->x;
+    xywMatrix.a22 = third->y - first->y;
+    xywMatrix.a23 = third->z - first->z;
+    xywMatrix.a41 = first->x;
+    xywMatrix.a42 = first->y;
+    xywMatrix.a43 = first->z;
 
     for (int y = minY; y <= maxY; y++) {
         for (int x = minX; x <= maxX; x++) {
@@ -468,14 +471,12 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
             }
 
             // Figure out the 1/W coordinate for this pixel.
-            Point *actualPoint = xywMatrix->multiplyPoint(triPoint);
+            Point *actualPoint = xywMatrix.multiplyPoint(triPoint);
             drawPixel(x, y, actualPoint->z, isSet);
             delete actualPoint;
             delete triPoint;
         }
     }
-
-    delete xywMatrix;
 }
 
 bool Screen::_isBackFacing(Point *first, Point *second, Point *third) {
@@ -502,18 +503,22 @@ bool Screen::_isBackFacing(Point *first, Point *second, Point *third) {
     }
 }
 
+Screen *Screen::_getMaskScreen() {
+    maskScreen = (maskScreen == NULL) ? new Screen(width, height) : maskScreen;
+    return maskScreen;
+}
+
 void Screen::drawOccludedTri(Point *first, Point *second, Point *third) {
     // Don't draw this if it is back-facing.
     if (_isBackFacing(first, second, third)) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the triangle.
-    Screen *tmpScreen = new Screen(width, height);
+    Screen *tmpScreen = _getMaskScreen();
     tmpScreen->clear();
     tmpScreen->drawTri(first, second, third, true);
 
     // Now, draw the "texture".
     _drawOccludedTri(first, second, third, tmpScreen);
-    delete tmpScreen;
 }
 
 void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *fourth) {
@@ -521,14 +526,13 @@ void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *
     if (_isBackFacing(first, second, fourth)) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the quad.
-    Screen *tmpScreen = new Screen(width, height);
+    Screen *tmpScreen = _getMaskScreen();
     tmpScreen->clear();
     tmpScreen->drawQuad(first, second, third, fourth, true);
 
     // Now, draw the "texture" in two quads.
     _drawOccludedTri(first, second, fourth, tmpScreen);
     _drawOccludedTri(second, third, fourth, tmpScreen);
-    delete tmpScreen;
 }
 
 void Screen::drawOccludedPolygon(Point *points[], int length) {
@@ -547,7 +551,7 @@ void Screen::drawOccludedPolygon(Point *points[], int length) {
     if (_isBackFacing(points[0], points[1], points[length - 1])) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the shape.
-    Screen *tmpScreen = new Screen(width, height);
+    Screen *tmpScreen = _getMaskScreen();
     tmpScreen->clear();
 
     for (int i = 0; i < length - 1; i++) {
@@ -559,8 +563,6 @@ void Screen::drawOccludedPolygon(Point *points[], int length) {
     for (int i = 0; i < length - 2; i++) {
         _drawOccludedTri(points[i], points[i + 1], points[length - 1], tmpScreen);
     }
-
-    delete tmpScreen;
 }
 
 void Screen::drawTexturedOccludedTri(Point *first, Point *second, Point *third, UV *firstTex, UV *secondTex, UV *thirdTex, Texture *tex) {

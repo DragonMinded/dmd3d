@@ -81,6 +81,7 @@ class Screen {
         const int width;
         const int height;
     private:
+        Screen *_getMaskScreen();
         bool _getPixel(int x, int y);
         bool _isBackFacing(Point *first, Point *second, Point *third);
         void _drawOccludedTri(Point *first, Point *second, Point *third, Screen *outline);
@@ -88,6 +89,7 @@ class Screen {
         int normalOrder;
         unsigned char *pixBuf;
         double *zBuf;
+        Screen *maskScreen;
 };
 
 #endif
