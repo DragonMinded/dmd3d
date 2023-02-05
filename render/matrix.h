@@ -6,6 +6,9 @@ class Point {
         // Constructor
         Point(double x, double y, double z);
 
+        // Return a clone of this point.
+        Point *clone();
+
         double x;
         double y;
         double z;

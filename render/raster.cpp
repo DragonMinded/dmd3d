@@ -9,9 +9,8 @@
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 
-UV::UV(double u, double v) {
-    this->u = u;
-    this->v = v;
+UV::UV(double reqU, double reqV) : u(reqU), v(reqV) {
+    // Basically a struct with read-only members.
 }
 
 Texture::Texture(int width, int height, unsigned char data[]) {
@@ -67,6 +66,12 @@ Texture::~Texture() {
     this->data = 0;
 }
 
+Texture *Texture::clone() {
+    Texture *newTex = new Texture(width, height, data);
+    newTex->setClampMode(mode);
+    return newTex;
+}
+
 void Texture::setClampMode(int mode) {
     switch (mode) {
         case CLAMP_MODE_NORMAL:
@@ -88,13 +93,38 @@ bool Texture::valueAt(double u, double v) {
             if (v > 1.0) { v = 1.0; }
             break;
         case CLAMP_MODE_MIRROR:
+            // First, fold along axis, because mirroring works
+            // at the UV zero crossing axis.
+            u = fabs(u);
+            v = fabs(v);
+
+            // Now work out the fractional part and integer part.
+            double uInt;
+            double vInt;
+            u = modf(u, &uInt);
+            v = modf(v, &vInt);
+
+            // Now, if the integer part is odd, we flip the direction.
+            if (((int)uInt) & 1) {
+                u = 1.0 - u;
+            }
+            if (((int)vInt) & 1) {
+                v = 1.0 - v;
+            }
+            break;
         case CLAMP_MODE_TILE:
-            // TODO: Implement these!
-            return 0;
+            double intPart;
+
+            u = modf(u, &intPart);
+            v = modf(v, &intPart);
+
+            if (u < 0.0) { u += 1.0; }
+            if (v < 0.0) { v += 1.0; }
+            break;
     }
 
-    int x = (int)(u * (double)width);
-    int y = (int)(v * (double)height);
+    int x = MIN((int)(u * (double)width), width - 1);
+    int y = MIN((int)(v * (double)height), height - 1);
 
     return data[x + (y * width)] != 0;
 }

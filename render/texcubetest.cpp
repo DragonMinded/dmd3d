@@ -15,6 +15,14 @@ int main (int argc, char *argv[]) {
     Texture *testTex = new Texture("testtex.png");
     Texture *suite = new Texture("suite.png");
 
+    // Set up a second texture that tiles.
+    Texture *testTex2 = testTex->clone();
+    testTex2->setClampMode(CLAMP_MODE_TILE);
+
+    // Set up a third texture that mirrors.
+    Texture *suite2 = suite->clone();
+    suite2->setClampMode(CLAMP_MODE_MIRROR);
+
     while ( 1 ) {
         // Set up our pixel buffer.
         screen->clear();
@@ -39,6 +47,12 @@ int main (int argc, char *argv[]) {
             new UV(1, 0),
             new UV(1, 1),
             new UV(0, 1),
+
+            // Except the one that doesn't ;)
+            new UV(0, 0),
+            new UV(2, 0),
+            new UV(2, 2),
+            new UV(0, 2),
         };
 
         // Manipulate location of object in world.
@@ -72,8 +86,8 @@ int main (int argc, char *argv[]) {
         );
         screen->drawTexturedOccludedQuad(
             cubeCoords[5], cubeCoords[4], cubeCoords[7], cubeCoords[6],
-            uvCoords[0], uvCoords[1], uvCoords[2], uvCoords[3],
-            testTex
+            uvCoords[4], uvCoords[5], uvCoords[6], uvCoords[7],
+            testTex2
         );
         screen->drawTexturedOccludedQuad(
             cubeCoords[0], cubeCoords[4], cubeCoords[5], cubeCoords[1],
@@ -85,8 +99,8 @@ int main (int argc, char *argv[]) {
         );
         screen->drawTexturedOccludedQuad(
             cubeCoords[2], cubeCoords[6], cubeCoords[7], cubeCoords[3],
-            uvCoords[0], uvCoords[1], uvCoords[2], uvCoords[3],
-            suite
+            uvCoords[4], uvCoords[5], uvCoords[6], uvCoords[7],
+            suite2
         );
         screen->drawOccludedQuad(
             cubeCoords[0], cubeCoords[3], cubeCoords[7], cubeCoords[4]

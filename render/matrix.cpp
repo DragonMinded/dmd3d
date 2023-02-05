@@ -9,6 +9,11 @@ Point::Point(double x, double y, double z) {
 }
 
 
+Point *Point::clone() {
+    return new Point(x, y, z);
+}
+
+
 Matrix::Matrix() {
     a11 = 1.0;
     a12 = 0.0;

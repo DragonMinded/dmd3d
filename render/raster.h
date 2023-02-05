@@ -11,8 +11,8 @@ class UV {
     public:
         UV(double u, double v);
 
-        double u;
-        double v;
+        const double u;
+        const double v;
 };
 
 class Texture {
@@ -20,6 +20,8 @@ class Texture {
         Texture(int width, int height, unsigned char data[]);
         Texture(const char * const filename);
         ~Texture();
+
+        Texture *clone();
 
         void setClampMode(int mode);
 
