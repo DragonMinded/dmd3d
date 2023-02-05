@@ -77,12 +77,32 @@ Point *Matrix::multiplyPoint(Point *point) {
     return new Point(x, y, z);
 }
 
+void Matrix::multiplyUpdatePoint(Point *point) {
+    double x = (a11 * point->x) + (a21 * point->y) + (a31 * point->z) + a41;
+    double y = (a12 * point->x) + (a22 * point->y) + (a32 * point->z) + a42;
+    double z = (a13 * point->x) + (a23 * point->y) + (a33 * point->z) + a43;
+
+    point->x = x;
+    point->y = y;
+    point->z = z;
+}
+
 Point *Matrix::projectPoint(Point *point) {
     double x = (a11 * point->x) + (a21 * point->y) + (a31 * point->z) + a41;
     double y = (a12 * point->x) + (a22 * point->y) + (a32 * point->z) + a42;
     double w = (a14 * point->x) + (a24 * point->y) + (a34 * point->z) + a44;
 
     return new Point(x / w, y / w, 1 / w);
+}
+
+void Matrix::projectUpdatePoint(Point *point) {
+    double x = (a11 * point->x) + (a21 * point->y) + (a31 * point->z) + a41;
+    double y = (a12 * point->x) + (a22 * point->y) + (a32 * point->z) + a42;
+    double w = (a14 * point->x) + (a24 * point->y) + (a34 * point->z) + a44;
+
+    point->x = x / w;
+    point->y = y / w;
+    point->z = 1 / w;
 }
 
 void Matrix::multiplyPoints(Point *points[], int length) {

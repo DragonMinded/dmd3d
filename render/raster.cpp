@@ -353,33 +353,28 @@ void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firs
     uvwMatrix.a42 = firstTex->v * firstW;
     uvwMatrix.a43 = firstW;
 
-    for (int y = minY; y <= maxY; y++) {
-        for (int x = minX; x <= maxX; x++) {
+    for (int y = MAX(minY, 0); y <= MIN(maxY, height - 1); y++) {
+        for (int x = MAX(minX, 0); x <= MIN(maxX, width - 1); x++) {
             Point curPoint(x + 0.5, y + 0.5, 0.0);
-            Point *triPoint = xyMatrix.multiplyPoint(&curPoint);
+            xyMatrix.multiplyUpdatePoint(&curPoint);
 
             // Make sure that we stay within bounds of the triangle.
-            if (triPoint->x < 0.0 || triPoint->x > 1.0) {
-                delete triPoint;
+            if (curPoint.x < 0.0 || curPoint.x > 1.0) {
                 continue;
             }
-            if (triPoint->y < 0.0 || triPoint->y > 1.0) {
-                delete triPoint;
+            if (curPoint.y < 0.0 || curPoint.y > 1.0) {
                 continue;
             }
-            if (triPoint->y > (1.0 - triPoint->x)) {
-                delete triPoint;
+            if (curPoint.y > (1.0 - curPoint.x)) {
                 continue;
             }
 
             // Figure out the 1/W UV coordinates for this pixel.
-            Point *uvInvPoint = uvwMatrix.multiplyPoint(triPoint);
-            double u = uvInvPoint->x / uvInvPoint->z;
-            double v = uvInvPoint->y / uvInvPoint->z;
+            uvwMatrix.multiplyUpdatePoint(&curPoint);
+            double u = curPoint.x / curPoint.z;
+            double v = curPoint.y / curPoint.z;
 
-            drawPixel(x, y, isAffine ? 0.0 : uvInvPoint->z, tex->valueAt(u, v));
-            delete uvInvPoint;
-            delete triPoint;
+            drawPixel(x, y, isAffine ? 0.0 : curPoint.z, tex->valueAt(u, v));
         }
     }
 }
@@ -444,10 +439,10 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
     xywMatrix.a42 = first->y;
     xywMatrix.a43 = first->z;
 
-    for (int y = minY; y <= maxY; y++) {
-        for (int x = minX; x <= maxX; x++) {
+    for (int y = MAX(minY, 0); y <= MIN(maxY, height - 1); y++) {
+        for (int x = MAX(minX, 0); x <= MIN(maxX, width - 1); x++) {
             Point curPoint(x + 0.5, y + 0.5, 0.0);
-            Point *triPoint = xyMatrix.multiplyPoint(&curPoint);
+            xyMatrix.multiplyUpdatePoint(&curPoint);
 
             // Cheeky hack to make sure we always draw the bounding box itself.
             // We know where it should be, so rounding errors where the inverse
@@ -456,25 +451,20 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
             bool isSet = screen->_getPixel(x, y);
             if (!isSet) {
                 // Make sure that we stay within bounds of the triangle.
-                if (triPoint->x < 0.0 || triPoint->x > 1.0) {
-                    delete triPoint;
+                if (curPoint.x < 0.0 || curPoint.x > 1.0) {
                     continue;
                 }
-                if (triPoint->y < 0.0 || triPoint->y > 1.0) {
-                    delete triPoint;
+                if (curPoint.y < 0.0 || curPoint.y > 1.0) {
                     continue;
                 }
-                if (triPoint->y > (1.0 - triPoint->x)) {
-                    delete triPoint;
+                if (curPoint.y > (1.0 - curPoint.x)) {
                     continue;
                 }
             }
 
             // Figure out the 1/W coordinate for this pixel.
-            Point *actualPoint = xywMatrix.multiplyPoint(triPoint);
-            drawPixel(x, y, actualPoint->z, isSet);
-            delete actualPoint;
-            delete triPoint;
+            xywMatrix.multiplyUpdatePoint(&curPoint);
+            drawPixel(x, y, curPoint.z, isSet);
         }
     }
 }

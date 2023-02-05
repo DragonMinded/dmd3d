@@ -55,19 +55,13 @@ void Polygon::reset() {
 
 void Polygon::transform(Matrix *matrix) {
     for (int i = 0; i < polyLength; i++) {
-        Point *newPoint = matrix->multiplyPoint(transPoints[i]);
-
-        delete transPoints[i];
-        transPoints[i] = newPoint;
+        matrix->multiplyUpdatePoint(transPoints[i]);
     }
 }
 
 void Polygon::project(Matrix *matrix) {
     for (int i = 0; i < polyLength; i++) {
-        Point *newPoint = matrix->projectPoint(transPoints[i]);
-
-        delete transPoints[i];
-        transPoints[i] = newPoint;
+        matrix->projectUpdatePoint(transPoints[i]);
     }
 }
 
