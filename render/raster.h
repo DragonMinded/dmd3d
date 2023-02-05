@@ -7,6 +7,9 @@
 #define CLAMP_MODE_MIRROR 1
 #define CLAMP_MODE_TILE 2
 
+#define NORMAL_ORDER_CW 0
+#define NORMAL_ORDER_CCW 1
+
 class UV {
     public:
         UV(double u, double v);
@@ -39,6 +42,8 @@ class Screen {
     public:
         Screen(int width, int height);
         ~Screen();
+        
+        void setNormalOrder(int normalOrder);
 
         void clear();
         void waitForVBlank();
@@ -80,6 +85,7 @@ class Screen {
         bool _isBackFacing(Point *first, Point *second, Point *third);
         void _drawOccludedTri(Point *first, Point *second, Point *third, Screen *outline);
 
+        int normalOrder;
         unsigned char *pixBuf;
         double *zBuf;
 };

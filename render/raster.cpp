@@ -132,11 +132,21 @@ bool Texture::valueAt(double u, double v) {
 Screen::Screen(int reqWidth, int reqHeight) : width(reqWidth), height(reqHeight) {
     this->pixBuf = (unsigned char *)malloc(width * height * sizeof(pixBuf[0]));
     this->zBuf = (double *)malloc(width * height * sizeof(zBuf[0]));
+    this->normalOrder = NORMAL_ORDER_CW;
 }
 
 Screen::~Screen() {
     free(this->pixBuf);
     free(this->zBuf);
+}
+
+void Screen::setNormalOrder(int normalOrder) {
+    switch (normalOrder) {
+        case NORMAL_ORDER_CW:
+        case NORMAL_ORDER_CCW:
+            this->normalOrder = normalOrder;
+            break;
+    }
 }
 
 void Screen::clear() {
@@ -475,15 +485,27 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
 }
 
 bool Screen::_isBackFacing(Point *first, Point *second, Point *third) {
-    // We are a CW system, not a CCW system, so the first vector is first->third.
-    double ax = third->x - first->x;
-    double ay = third->y - first->y;
+    if (normalOrder == NORMAL_ORDER_CW) {
+        // We are a CW system, not a CCW system, so the first vector is first->third.
+        double ax = third->x - first->x;
+        double ay = third->y - first->y;
 
-    double bx = second->x - first->x;
-    double by = second->y - first->y;
+        double bx = second->x - first->x;
+        double by = second->y - first->y;
 
-    // We just need the Z axis from the cross product.
-    return ((ax * by) - (ay * bx)) > 0.0;
+        // We just need the Z axis from the cross product.
+        return ((ax * by) - (ay * bx)) > 0.0;
+    } else {
+        // We are a CCW system, not a CW system, so the first vector is first->second.
+        double ax = second->x - first->x;
+        double ay = second->y - first->y;
+
+        double bx = third->x - first->x;
+        double by = third->y - first->y;
+
+        // We just need the Z axis from the cross product.
+        return ((ax * by) - (ay * bx)) > 0.0;
+    }
 }
 
 void Screen::drawOccludedTri(Point *first, Point *second, Point *third) {
