@@ -60,16 +60,13 @@ Matrix::Matrix(int width, int height, double fov, double zNear, double zFar) {
     double aspect = halfwidth / halfheight;
     double cot_fovy_2 = cos(fovrads / 2.0) / sin(fovrads / 2.0);
 
-    Matrix *projectionMatrix = new Matrix();
-    projectionMatrix->a11 = cot_fovy_2 / aspect;
-    projectionMatrix->a22 = cot_fovy_2;
-    projectionMatrix->a33 = -(zFar+zNear)/(zNear-zFar);
-    projectionMatrix->a34 = -1;
-    projectionMatrix->a43 = -(2.0*zFar*zNear)/(zNear-zFar);
-    
-    multiply(projectionMatrix);
-
-    delete projectionMatrix;
+    Matrix projectionMatrix;
+    projectionMatrix.a11 = cot_fovy_2 / aspect;
+    projectionMatrix.a22 = cot_fovy_2;
+    projectionMatrix.a33 = -(zFar+zNear)/(zNear-zFar);
+    projectionMatrix.a34 = -1;
+    projectionMatrix.a43 = -(2.0*zFar*zNear)/(zNear-zFar);
+    multiply(&projectionMatrix);
 }
 
 Point *Matrix::multiplyPoint(Point *point) {
@@ -105,10 +102,8 @@ void Matrix::projectPoints(Point *points[], int length) {
 }
 
 Matrix *Matrix::translate(double x, double y, double z) {
-    Point *point = new Point(x, y, z);
-    translate(point);
-
-    delete point;
+    Point point(x, y, z);
+    translate(&point);
 
     return this;
 }
@@ -126,37 +121,32 @@ Matrix *Matrix::translate(Point *point) {
 }
 
 Matrix *Matrix::translateX(double x) {
-    Point *point = new Point(x, 0.0, 0.0);
-    translate(point);
-    delete point;
+    Point point(x, 0.0, 0.0);
+    translate(&point);
 
     return this;
 }
 
 Matrix *Matrix::translateY(double y) {
-    Point *point = new Point(0.0, y, 0.0);
-    translate(point);
-    delete point;
+    Point point(0.0, y, 0.0);
+    translate(&point);
 
     return this;
 }
 
 Matrix *Matrix::translateZ(double z) {
-    Point *point = new Point(0.0, 0.0, z);
-    translate(point);
-    delete point;
+    Point point(0.0, 0.0, z);
+    translate(&point);
 
     return this;
 }
 
 Matrix *Matrix::scale(double x, double y, double z) {
-    Matrix *tmp = new Matrix();
-    tmp->a11 = x;
-    tmp->a22 = y;
-    tmp->a33 = z;
-    
-    multiply(tmp);
-    delete tmp;
+    Matrix tmp;
+    tmp.a11 = x;
+    tmp.a22 = y;
+    tmp.a33 = z;
+    multiply(&tmp);
 
     return this;
 }
@@ -178,97 +168,94 @@ Matrix *Matrix::scaleZ(double z) {
 }
 
 Matrix *Matrix::rotateX(double degrees) {
-    Matrix *tmp = new Matrix();
-    tmp->a33 = cos((degrees / 180.0) * M_PI);
-    tmp->a22 = tmp->a33;
-    tmp->a32 = sin((degrees / 180.0) * M_PI);
-    tmp->a23 = -tmp->a32;
+    Matrix tmp;
 
-    multiply(tmp);
-    delete tmp;
+    tmp.a33 = cos((degrees / 180.0) * M_PI);
+    tmp.a22 = tmp.a33;
+    tmp.a32 = sin((degrees / 180.0) * M_PI);
+    tmp.a23 = -tmp.a32;
+
+    multiply(&tmp);
 
     return this;
 }
 
 Matrix *Matrix::rotateY(double degrees) {
-    Matrix *tmp = new Matrix();
-    tmp->a33 = cos((degrees / 180.0) * M_PI);
-    tmp->a11 = tmp->a33;
-    tmp->a13 = sin((degrees / 180.0) * M_PI);
-    tmp->a31 = -tmp->a13;
+    Matrix tmp;
 
-    multiply(tmp);
-    delete tmp;
+    tmp.a33 = cos((degrees / 180.0) * M_PI);
+    tmp.a11 = tmp.a33;
+    tmp.a13 = sin((degrees / 180.0) * M_PI);
+    tmp.a31 = -tmp.a13;
+
+    multiply(&tmp);
 
     return this;
 }
 
 Matrix *Matrix::rotateZ(double degrees) {
-    Matrix *tmp = new Matrix();
-    tmp->a22 = cos((degrees / 180.0) * M_PI);
-    tmp->a11 = tmp->a22;
-    tmp->a21 = sin((degrees / 180.0) * M_PI);
-    tmp->a12 = -tmp->a21;
+    Matrix tmp;
 
-    multiply(tmp);
-    delete tmp;
+    tmp.a22 = cos((degrees / 180.0) * M_PI);
+    tmp.a11 = tmp.a22;
+    tmp.a21 = sin((degrees / 180.0) * M_PI);
+    tmp.a12 = -tmp.a21;
+
+    multiply(&tmp);
 
     return this;
 }
 
 Matrix *Matrix::rotateOriginX(Point *origin, double degrees) {
-    Matrix *move = new Matrix();
-    move->a41 = origin->x;
-    move->a42 = origin->y;
-    move->a43 = origin->z;
-    multiply(move);
+    Matrix move;
+
+    move.a41 = origin->x;
+    move.a42 = origin->y;
+    move.a43 = origin->z;
+    multiply(&move);
 
     rotateX(degrees);
 
-    move->a41 = -origin->x;
-    move->a42 = -origin->y;
-    move->a43 = -origin->z;
-    multiply(move);
-
-    delete move;
+    move.a41 = -origin->x;
+    move.a42 = -origin->y;
+    move.a43 = -origin->z;
+    multiply(&move);
 
     return this;
 }
 
 Matrix *Matrix::rotateOriginY(Point *origin, double degrees) {
-    Matrix *move = new Matrix();
-    move->a41 = origin->x;
-    move->a42 = origin->y;
-    move->a43 = origin->z;
-    multiply(move);
+    Matrix move;
+
+    move.a41 = origin->x;
+    move.a42 = origin->y;
+    move.a43 = origin->z;
+    multiply(&move);
 
     rotateY(degrees);
 
-    move->a41 = -origin->x;
-    move->a42 = -origin->y;
-    move->a43 = -origin->z;
-    multiply(move);
-
-    delete move;
+    move.a41 = -origin->x;
+    move.a42 = -origin->y;
+    move.a43 = -origin->z;
+    multiply(&move);
 
     return this;
 }
 
 Matrix *Matrix::rotateOriginZ(Point *origin, double degrees) {
-    Matrix *move = new Matrix();
-    move->a41 = origin->x;
-    move->a42 = origin->y;
-    move->a43 = origin->z;
-    multiply(move);
+    Matrix move;
+
+    move.a41 = origin->x;
+    move.a42 = origin->y;
+    move.a43 = origin->z;
+    multiply(&move);
 
     rotateZ(degrees);
 
-    move->a41 = -origin->x;
-    move->a42 = -origin->y;
-    move->a43 = -origin->z;
-    multiply(move);
-
-    delete move;
+    move.a41 = -origin->x;
+    move.a42 = -origin->y;
+    move.a43 = -origin->z;
+    multiply(&move);
 
     return this;
 }
@@ -374,50 +361,49 @@ Matrix *Matrix::invert()
 }
 
 Matrix *Matrix::multiply(Matrix *other) {
-    Matrix *tmp = new Matrix();
+    Matrix tmp;
 
     // First row.
-    tmp->a11 = (other->a11 * this->a11) + (other->a12 * this->a21) + (other->a13 * this->a31) + (other->a14 * this->a41);
-    tmp->a12 = (other->a11 * this->a12) + (other->a12 * this->a22) + (other->a13 * this->a32) + (other->a14 * this->a42);
-    tmp->a13 = (other->a11 * this->a13) + (other->a12 * this->a23) + (other->a13 * this->a33) + (other->a14 * this->a43);
-    tmp->a14 = (other->a11 * this->a14) + (other->a12 * this->a24) + (other->a13 * this->a34) + (other->a14 * this->a44);
+    tmp.a11 = (other->a11 * this->a11) + (other->a12 * this->a21) + (other->a13 * this->a31) + (other->a14 * this->a41);
+    tmp.a12 = (other->a11 * this->a12) + (other->a12 * this->a22) + (other->a13 * this->a32) + (other->a14 * this->a42);
+    tmp.a13 = (other->a11 * this->a13) + (other->a12 * this->a23) + (other->a13 * this->a33) + (other->a14 * this->a43);
+    tmp.a14 = (other->a11 * this->a14) + (other->a12 * this->a24) + (other->a13 * this->a34) + (other->a14 * this->a44);
 
     // Second row.
-    tmp->a21 = (other->a21 * this->a11) + (other->a22 * this->a21) + (other->a23 * this->a31) + (other->a24 * this->a41);
-    tmp->a22 = (other->a21 * this->a12) + (other->a22 * this->a22) + (other->a23 * this->a32) + (other->a24 * this->a42);
-    tmp->a23 = (other->a21 * this->a13) + (other->a22 * this->a23) + (other->a23 * this->a33) + (other->a24 * this->a43);
-    tmp->a24 = (other->a21 * this->a14) + (other->a22 * this->a24) + (other->a23 * this->a34) + (other->a24 * this->a44);
+    tmp.a21 = (other->a21 * this->a11) + (other->a22 * this->a21) + (other->a23 * this->a31) + (other->a24 * this->a41);
+    tmp.a22 = (other->a21 * this->a12) + (other->a22 * this->a22) + (other->a23 * this->a32) + (other->a24 * this->a42);
+    tmp.a23 = (other->a21 * this->a13) + (other->a22 * this->a23) + (other->a23 * this->a33) + (other->a24 * this->a43);
+    tmp.a24 = (other->a21 * this->a14) + (other->a22 * this->a24) + (other->a23 * this->a34) + (other->a24 * this->a44);
 
     // Third row.
-    tmp->a31 = (other->a31 * this->a11) + (other->a32 * this->a21) + (other->a33 * this->a31) + (other->a34 * this->a41);
-    tmp->a32 = (other->a31 * this->a12) + (other->a32 * this->a22) + (other->a33 * this->a32) + (other->a34 * this->a42);
-    tmp->a33 = (other->a31 * this->a13) + (other->a32 * this->a23) + (other->a33 * this->a33) + (other->a34 * this->a43);
-    tmp->a34 = (other->a31 * this->a14) + (other->a32 * this->a24) + (other->a33 * this->a34) + (other->a34 * this->a44);
+    tmp.a31 = (other->a31 * this->a11) + (other->a32 * this->a21) + (other->a33 * this->a31) + (other->a34 * this->a41);
+    tmp.a32 = (other->a31 * this->a12) + (other->a32 * this->a22) + (other->a33 * this->a32) + (other->a34 * this->a42);
+    tmp.a33 = (other->a31 * this->a13) + (other->a32 * this->a23) + (other->a33 * this->a33) + (other->a34 * this->a43);
+    tmp.a34 = (other->a31 * this->a14) + (other->a32 * this->a24) + (other->a33 * this->a34) + (other->a34 * this->a44);
 
     // Forth row.
-    tmp->a41 = (other->a41 * this->a11) + (other->a42 * this->a21) + (other->a43 * this->a31) + (other->a44 * this->a41);
-    tmp->a42 = (other->a41 * this->a12) + (other->a42 * this->a22) + (other->a43 * this->a32) + (other->a44 * this->a42);
-    tmp->a43 = (other->a41 * this->a13) + (other->a42 * this->a23) + (other->a43 * this->a33) + (other->a44 * this->a43);
-    tmp->a44 = (other->a41 * this->a14) + (other->a42 * this->a24) + (other->a43 * this->a34) + (other->a44 * this->a44);
+    tmp.a41 = (other->a41 * this->a11) + (other->a42 * this->a21) + (other->a43 * this->a31) + (other->a44 * this->a41);
+    tmp.a42 = (other->a41 * this->a12) + (other->a42 * this->a22) + (other->a43 * this->a32) + (other->a44 * this->a42);
+    tmp.a43 = (other->a41 * this->a13) + (other->a42 * this->a23) + (other->a43 * this->a33) + (other->a44 * this->a43);
+    tmp.a44 = (other->a41 * this->a14) + (other->a42 * this->a24) + (other->a43 * this->a34) + (other->a44 * this->a44);
 
     // Copy finished over.
-    a11 = tmp->a11;
-    a12 = tmp->a12;
-    a13 = tmp->a13;
-    a14 = tmp->a14;
-    a21 = tmp->a21;
-    a22 = tmp->a22;
-    a23 = tmp->a23;
-    a24 = tmp->a24;
-    a31 = tmp->a31;
-    a32 = tmp->a32;
-    a33 = tmp->a33;
-    a34 = tmp->a34;
-    a41 = tmp->a41;
-    a42 = tmp->a42;
-    a43 = tmp->a43;
-    a44 = tmp->a44;
-    delete tmp;
+    a11 = tmp.a11;
+    a12 = tmp.a12;
+    a13 = tmp.a13;
+    a14 = tmp.a14;
+    a21 = tmp.a21;
+    a22 = tmp.a22;
+    a23 = tmp.a23;
+    a24 = tmp.a24;
+    a31 = tmp.a31;
+    a32 = tmp.a32;
+    a33 = tmp.a33;
+    a34 = tmp.a34;
+    a41 = tmp.a41;
+    a42 = tmp.a42;
+    a43 = tmp.a43;
+    a44 = tmp.a44;
 
     return this;
 }
