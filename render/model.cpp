@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include "model.h"
 #include "matrix.h"
 #include "common.h"
@@ -127,49 +128,117 @@ void Polygon::reset() {
 }
 
 void Polygon::cull(Frustum *frustum) {
-    bool allIn = true;
-    bool allOut = true;
+    // Number of planes we are inside. Should equal the number of planes in the frustum
+    // if we are entirely inside the frustum.
+    int insidePlaneCount = 0;
 
-    for (int i = 0; i < transPolyLength; i++) {
-        for (int j = 0; j < frustum->length; j++) {
+    for (int j = 0; j < frustum->length; j++) {
+        // Count how many edges are inside this particular plane. Should equal the count
+        // of points if we're entirely inside this plane.
+        int insidePointCount = 0;
+
+        for (int i = 0; i < transPolyLength; i++) {
             bool inside = frustum->planes[j]->isPointAbove(transPoints[i]);
-            if (!inside) {
-                allIn = false;
+            insidePointCount += (inside ? 1 : 0);
+        }
 
-                // No need to check the rest of the planes, we know this is out of the frustum
-                // already, so skip the rest.
-                break;
-            }
-            if (inside) {
-                allOut = false;
-            }
+        if (insidePointCount == 0) {
+            // This polygon is entirely outside this particular plane.
+            culled = true;
+            return;
+        }
+
+        if (insidePointCount == transPolyLength) {
+            // This polygon is entirely inside this particular plane.
+            insidePlaneCount ++;
         }
     }
 
-    if (allIn) {
-        // Nothing to do, we're already fully inside the bounds.
+    if (insidePlaneCount == frustum->length) {
+        // We're entirely inside the frustum, no need to do any dividing up below.
+        culled = false;
         return;
     }
 
-    if (allOut) {
-        // We're entirely outside the frustum, so simply do not display this polygon.
-        culled = true;
-        return;
-    }
-
-    // TODO: We've got some work to do dividing up this polygon.
+    // The polygon is at least partially visible.
     culled = false;
+
+    // We need to spin around the polygon and introduce extra polygons at intersection points.
+    // We also need to do it for each plane as a unit operation so that we can clip polygons
+    // for each plane.
+    for (int j = 0; j < frustum->length; j++) {
+        bool inside = frustum->planes[j]->isPointAbove(transPoints[0]);
+        int start = 0;
+
+        while (start < transPolyLength) {
+            // The end node we're looking at can wrap around.
+            int end = (start + 1) % transPolyLength;
+
+            bool newInside = frustum->planes[j]->isPointAbove(transPoints[end]);
+
+            if (newInside == inside) {
+                // Simply mark this line for inclusion or exclusion, continuing the trend.
+                highlights[start] = highlights[start] ? newInside : false;
+
+                // We didn't intersect, simply move on.
+                start++;
+                continue;
+            }
+
+            // We intersected this plane with this line. Introduce a new point at the intersection.
+            Point *intersection = frustum->planes[j]->intersection(transPoints[start], transPoints[end]);
+
+            // Insert that point.
+            transPoints = (Point **)realloc(transPoints, sizeof(transPoints[0]) * (transPolyLength + 1));
+            highlights = (bool *)realloc(highlights, sizeof(highlights[0]) * (transPolyLength + 1));
+            if (end != 0) {
+                // Move the rest of the points to make room.
+                memmove(&transPoints[end + 1], &transPoints[end], sizeof(transPoints[0]) * (transPolyLength - end));
+                memmove(&highlights[end + 1], &highlights[end], sizeof(highlights[0]) * (transPolyLength - end));
+            }
+            transPoints[start + 1] = intersection;
+            transPolyLength++;
+
+            // Mark the points themselves.
+            highlights[start] = highlights[start] ? inside : false;
+            highlights[start + 1] = highlights[start + 1] ? newInside : false;
+
+            // Continue on.
+            inside = newInside;
+            start += 2;
+        }
+
+        // Get rid of runs of invisible edges by collapsing down.
+        int edge = 0;
+        while (edge < transPolyLength) {
+            int next = (edge + 1) % transPolyLength;
+
+            if (!highlights[edge] && !highlights[next]) {
+                // We can get rid of the next node entirely, since we aren't going to draw it.
+                delete transPoints[next];
+
+                if ((transPolyLength - (next + 1)) > 0) {
+                    memmove(&transPoints[next], &transPoints[next + 1], sizeof(transPoints[0]) * (transPolyLength - (next + 1)));
+                    memmove(&highlights[next], &highlights[next + 1], sizeof(highlights[0]) * (transPolyLength - (next + 1)));
+                }
+
+                transPolyLength --;
+            } else {
+                edge ++;
+            }
+        }
+    }
 }
 
 void Polygon::draw(Screen *screen) {
     if (!culled) {
-        for (int i = 0; i < transPolyLength - 1; i++) {
+        for (int i = 0; i < transPolyLength; i++) {
+            int j = (i + 1) % transPolyLength;
+
             if (highlights[i]) {
-                screen->drawLine(transPoints[i], transPoints[i + 1], true);
+                screen->drawLine(transPoints[i], transPoints[j], true);
             }
         }
-
-        if (highlights[transPolyLength - 1]) { screen->drawLine(transPoints[transPolyLength - 1], transPoints[0], true); }
     }
 }
 

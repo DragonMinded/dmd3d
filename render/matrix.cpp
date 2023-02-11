@@ -75,6 +75,12 @@ Frustum::Frustum(int width, int height, double fov, double zNear, double zFar) {
     length = 6;
     planes = (Plane **)malloc(sizeof(Plane *) * length);
 
+    // Make sure we clip juuuuuust shy of the near plane so we don't get 1/Z's that
+    // are infinity. This feels like a hack, but if we don't do this then we put
+    // the clipped polygon edges right on the near plane which then results in a Z
+    // of "0" for perspective division.
+    zNear += 0.001;
+
     double fovrads = (fov / 180.0) * M_PI;
     double aspect = (double)width / (double)height;
 

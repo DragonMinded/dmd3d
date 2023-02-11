@@ -300,11 +300,10 @@ void Screen::drawPolygon(Point *points[], int length, bool on) {
     }
 
     // Draw each individual line outlining the polygon.
-    for (int i = 0; i < length - 1; i++) {
-        drawLine(points[i], points[i + 1], on);
+    for (int i = 0; i < length; i++) {
+        int j = (i + 1) % length;
+        drawLine(points[i], points[j], on);
     }
-
-    drawLine(points[length - 1], points[0], on);
 }
 
 void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firstTex, UV *secondTex, UV *thirdTex, Texture *tex) {
@@ -539,10 +538,10 @@ void Screen::drawOccludedPolygon(Point *points[], int length) {
     Screen *tmpScreen = _getMaskScreen();
     tmpScreen->clear();
 
-    for (int i = 0; i < length - 1; i++) {
-        tmpScreen->drawLine(points[i], points[i + 1], true);
+    for (int i = 0; i < length; i++) {
+        int j = (i + 1) % length;
+        tmpScreen->drawLine(points[i], points[j], true);
     }
-    tmpScreen->drawLine(points[length - 1], points[0], true);
 
     // Now, draw the "texture" in length-2 triangles.
     for (int i = 0; i < length - 2; i++) {
@@ -601,12 +600,12 @@ void Screen::drawOccludedPolygon(Point *points[], bool draws[], int length) {
     Screen *tmpScreen = _getMaskScreen();
     tmpScreen->clear();
 
-    for (int i = 0; i < length - 1; i++) {
+    for (int i = 0; i < length; i++) {
+        int j = (i + 1) % length;
         if (draws[i]) {
-            tmpScreen->drawLine(points[i], points[i + 1], true);
+            tmpScreen->drawLine(points[i], points[j], true);
         }
     }
-    if (draws[length - 1]) { tmpScreen->drawLine(points[length - 1], points[0], true); }
 
     // Now, draw the "texture" in length-2 triangles.
     for (int i = 0; i < length - 2; i++) {
