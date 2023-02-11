@@ -23,6 +23,11 @@ class Plane {
         // that the plane is constructed via points in a CCW fashion.
         bool isPointAbove(Point *point);
 
+        // Return the intersection point on the plane for a line passsing through the
+        // plane. Note that this only works when isPointAbove returns different values
+        // for the start and end of the line.
+        Point *intersection(Point *start, Point *end);
+
     private:
         Point p1;
         Point p2;

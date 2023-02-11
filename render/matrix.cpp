@@ -48,6 +48,29 @@ bool Plane::isPointAbove(Point *point) {
     return dot >= 0.0;
 }
 
+Point *Plane::intersection(Point *start, Point *end) {
+    double lineX = end->x - start->x;
+    double lineY = end->y - start->y;
+    double lineZ = end->z - start->z;
+    double lineNormalDot = (nx * lineX) + (ny * lineY) + (nz * lineZ);
+
+    // The factor here is between 0.0 and 1.0, where 0.0 means that the intersection is
+    // 0% of the way between start and end, and 1.0 means that the intersection is 100%
+    // of the way between the start and end.
+    double vecFromPlaneX = start->x - p1.x;
+    double vecFromPlaneY = start->y - p1.y;
+    double vecFromPlaneZ = start->z - p1.z;
+    double factor = -((nx * vecFromPlaneX) + (ny * vecFromPlaneY) + (nz * vecFromPlaneZ)) / lineNormalDot;
+
+    // Now that we've calculated the factor, start at the start point and add the factor percentage
+    // along to get to the new point.
+    return new Point(
+        start->x + (lineX * factor),
+        start->y + (lineY * factor),
+        start->z + (lineZ * factor)
+    );
+}
+
 Frustum::Frustum(int width, int height, double fov, double zNear, double zFar) {
     length = 6;
     planes = (Plane **)malloc(sizeof(Plane *) * length);

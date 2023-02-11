@@ -65,6 +65,22 @@ void plane_test() {
         Point below(2.0, 3.0, -4.0);
         ASSERT(xyPlane.isPointAbove(&above), "Point is not above plane but should be?");
         ASSERT(!xyPlane.isPointAbove(&below), "Point is above plane but shouldn't be?");
+
+        Point lineStart(1.0, 2.0, 3.0);
+        Point lineEnd(1.0, 2.0, -3.0);
+        Point *intersection = xyPlane.intersection(&lineStart, &lineEnd);
+        ASSERT(intersection->x == 1.0, "Intersection point is wrong!");
+        ASSERT(intersection->y == 2.0, "Intersection point is wrong!");
+        ASSERT(intersection->z == 0.0, "Intersection point is wrong!");
+        delete intersection;
+
+        lineStart.x = 0.0;
+        lineStart.y = 3.0;
+        intersection = xyPlane.intersection(&lineStart, &lineEnd);
+        ASSERT(intersection->x == 0.5, "Intersection point is wrong!");
+        ASSERT(intersection->y == 2.5, "Intersection point is wrong!");
+        ASSERT(intersection->z == 0.0, "Intersection point is wrong!");
+        delete intersection;
     }
 
     // Now, a vertical plane.
