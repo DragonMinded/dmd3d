@@ -18,11 +18,14 @@ class Polygon {
         // Undo any transformations applied to this polygon.
         virtual void reset();
 
-        // Perform an affine or perspective transformation on this model.
+        // Perform an affine or perspective transformation on this polygon.
         void transform(Matrix *matrix);
 
-        // Perform a perspective transformation on this model given a projection matrix.
+        // Perform a perspective transformation on this polygon given a projection matrix.
         void project(Matrix *matrix);
+
+        // Perform a frustum cull on this polygon.
+        virtual void cull(Frustum *frustum);
 
         // Draw this model to the given surface.
         virtual void draw(Screen *screen);
@@ -32,6 +35,7 @@ class Polygon {
         int polyLength;
 
         Point **transPoints;
+        bool *highlights;
         int transPolyLength;
 
         bool culled;
@@ -41,14 +45,10 @@ class OccludedWireframePolygon : public Polygon {
     public:
         OccludedWireframePolygon(Point *x, Point *y, Point *z);
         OccludedWireframePolygon(Point *points[], int length);
-        ~OccludedWireframePolygon();
 
+        // Clone this exact class of polygon.
         virtual Polygon *clone();
-        virtual void reset();
         virtual void draw(Screen *screen);
-
-    protected:
-        bool *highlights;
 };
 
 class Model {
@@ -74,6 +74,9 @@ class Model {
 
         // Perform a perspective transformation on this model given a projection matrix.
         void project(Matrix *matrix);
+
+        // Perform a frustum cull on this model given a set of planes making up a frustum.
+        void cull(Frustum *frustum);
 
         // Draw this model to the given surface.
         void draw(Screen *screen);

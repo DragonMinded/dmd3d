@@ -33,6 +33,15 @@ class Plane {
         double nz;
 };
 
+class Frustum {
+    public:
+        Frustum(int width, int height, double fov, double zNear, double zFar);
+        ~Frustum();
+
+        Plane **planes;
+        int length;
+};
+
 class Matrix {
     public:
         // Constructor (makes the identity matrix).

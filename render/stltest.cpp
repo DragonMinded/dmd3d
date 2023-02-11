@@ -20,6 +20,9 @@ int main (int argc, char *argv[]) {
     double maxDimension = MAX(MAX(dimensions->x, dimensions->y), dimensions->z) / 2.25;
     delete dimensions;
 
+    // Set up a simple frustum for culling.
+    Frustum *frustum = new Frustum(SIGN_WIDTH, SIGN_HEIGHT, 60.0, 1.0, 1000.0);
+
     while ( 1 ) {
         // Set up our pixel buffer.
         screen->clear();
@@ -47,6 +50,9 @@ int main (int argc, char *argv[]) {
         model->transform(effectsMatrix);
         delete effectsMatrix;
 
+        // Cull any polygons outside of our frustum.
+        model->cull(frustum);
+
         // Move the cube to where it should go.
         model->project(viewMatrix);
 
@@ -64,6 +70,7 @@ int main (int argc, char *argv[]) {
         count++;
     }
 
+    delete frustum;
     delete model;
     delete screen;
     printf("Done!\n");

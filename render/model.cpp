@@ -24,7 +24,13 @@ Polygon::Polygon(Point *x, Point *y, Point *z) {
     transPoints[1] = y->clone();
     transPoints[2] = z->clone();
 
-    // We aren't culled.
+    // Set up whether we are highlighting this polygon's edge or not.
+    highlights = (bool *)malloc(sizeof(bool) * 3);
+    highlights[0] = true;
+    highlights[1] = true;
+    highlights[2] = true;
+
+    // We aren't completely culled.
     culled = false;
 }
 
@@ -41,7 +47,14 @@ Polygon::Polygon(Point *points[], int length) {
         transPoints[i] = points[i]->clone();
     }
 
-    // We aren't culled.
+    // Also set up highlights.
+    highlights = (bool *)malloc(sizeof(bool) * length);
+
+    for (int i = 0; i < length; i++) {
+        highlights[i] = true;
+    }
+
+    // We aren't completely culled.
     culled = false;
 }
 
@@ -55,8 +68,10 @@ Polygon::~Polygon() {
 
     free(polyPoints);
     free(transPoints);
+    free(highlights);
     polyPoints = 0;
     transPoints = 0;
+    highlights = 0;
 
     polyLength = 0;
     transPolyLength = 0;
@@ -76,53 +91,7 @@ void Polygon::project(Matrix *matrix) {
 
 Polygon *Polygon::clone() {
     // Make sure if we clone a polygon that's been transformed, the new is also.
-    return new Polygon(transPoints, transPolyLength);
-}
-
-void Polygon::reset() {
-    // Kill old transformed polygon entirely, it could be frustum culled and have more points than
-    // our original.
-    for (int i = 0; i < transPolyLength; i++) {
-        delete transPoints[i];
-    }
-    free(transPoints);
-
-    transPolyLength = polyLength;
-    transPoints = (Point **)malloc(sizeof(transPoints[0]) * polyLength);
-
-    for (int i = 0; i < polyLength; i++) {
-        transPoints[i] = polyPoints[i]->clone();
-    }
-
-    // We aren't culled.
-    culled = false;
-}
-
-void Polygon::draw(Screen *screen) {
-    if (!culled) {
-        screen->drawPolygon(transPoints, transPolyLength, true);
-    }
-}
-
-OccludedWireframePolygon::OccludedWireframePolygon(Point *x, Point *y, Point *z) : Polygon(x, y, z) {
-    highlights = (bool *)malloc(sizeof(bool) * 3);
-    highlights[0] = true;
-    highlights[1] = true;
-    highlights[2] = true;
-}
-
-OccludedWireframePolygon::OccludedWireframePolygon(Point *points[], int length) : Polygon(points, length) {
-    highlights = (bool *)malloc(sizeof(bool) * length);
-
-    for (int i = 0; i < length; i++) {
-        highlights[i] = true;
-    }
-}
-
-Polygon *OccludedWireframePolygon::clone() {
-    // Make sure if we clone a polygon that's been transformed, the new is also. Also make sure
-    // to copy culled edge information.
-    OccludedWireframePolygon *newPoly = new OccludedWireframePolygon(transPoints, transPolyLength);
+    Polygon *newPoly = new Polygon(transPoints, transPolyLength);
     for (int i = 0; i < transPolyLength; i++) {
         newPoly->highlights[i] = highlights[i];
     }
@@ -130,7 +99,7 @@ Polygon *OccludedWireframePolygon::clone() {
     return newPoly;
 }
 
-void OccludedWireframePolygon::reset() {
+void Polygon::reset() {
     // Kill old transformed polygon entirely, it could be frustum culled and have more points than
     // our original.
     for (int i = 0; i < transPolyLength; i++) {
@@ -141,15 +110,82 @@ void OccludedWireframePolygon::reset() {
 
     transPolyLength = polyLength;
     transPoints = (Point **)malloc(sizeof(transPoints[0]) * polyLength);
-    highlights = (bool *)malloc(sizeof(bool) * polyLength);
 
     for (int i = 0; i < polyLength; i++) {
         transPoints[i] = polyPoints[i]->clone();
+    }
+
+    // Also reset highlights.
+    highlights = (bool *)malloc(sizeof(bool) * polyLength);
+
+    for (int i = 0; i < polyLength; i++) {
         highlights[i] = true;
     }
 
     // We aren't culled.
     culled = false;
+}
+
+void Polygon::cull(Frustum *frustum) {
+    bool allIn = true;
+    bool allOut = true;
+
+    for (int i = 0; i < transPolyLength; i++) {
+        for (int j = 0; j < frustum->length; j++) {
+            bool inside = frustum->planes[j]->isPointAbove(transPoints[i]);
+            if (!inside) {
+                allIn = false;
+
+                // No need to check the rest of the planes, we know this is out of the frustum
+                // already, so skip the rest.
+                break;
+            }
+            if (inside) {
+                allOut = false;
+            }
+        }
+    }
+
+    if (allIn) {
+        // Nothing to do, we're already fully inside the bounds.
+        return;
+    }
+
+    if (allOut) {
+        // We're entirely outside the frustum, so simply do not display this polygon.
+        culled = true;
+        return;
+    }
+
+    // TODO: We've got some work to do dividing up this polygon.
+    culled = false;
+}
+
+void Polygon::draw(Screen *screen) {
+    if (!culled) {
+        for (int i = 0; i < transPolyLength - 1; i++) {
+            if (highlights[i]) {
+                screen->drawLine(transPoints[i], transPoints[i + 1], true);
+            }
+        }
+
+        if (highlights[transPolyLength - 1]) { screen->drawLine(transPoints[transPolyLength - 1], transPoints[0], true); }
+    }
+}
+
+OccludedWireframePolygon::OccludedWireframePolygon(Point *x, Point *y, Point *z) : Polygon(x, y, z) {}
+
+OccludedWireframePolygon::OccludedWireframePolygon(Point *points[], int length) : Polygon(points, length) {}
+
+Polygon *OccludedWireframePolygon::clone() {
+    // Make sure if we clone a polygon that's been transformed, the new is also. Also make sure
+    // to copy culled edge information.
+    OccludedWireframePolygon *newPoly = new OccludedWireframePolygon(transPoints, transPolyLength);
+    for (int i = 0; i < transPolyLength; i++) {
+        newPoly->highlights[i] = highlights[i];
+    }
+
+    return newPoly;
 }
 
 void OccludedWireframePolygon::draw(Screen *screen) {
@@ -218,6 +254,12 @@ void Model::transform(Matrix *matrix) {
 void Model::project(Matrix *matrix) {
     for (int i = 0; i < modelLength; i++) {
         polygons[i]->project(matrix);
+    }
+}
+
+void Model::cull(Frustum *frustum) {
+    for (int i = 0; i < modelLength; i++) {
+        polygons[i]->cull(frustum);
     }
 }
 

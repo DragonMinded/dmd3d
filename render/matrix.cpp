@@ -48,6 +48,58 @@ bool Plane::isPointAbove(Point *point) {
     return dot >= 0.0;
 }
 
+Frustum::Frustum(int width, int height, double fov, double zNear, double zFar) {
+    length = 6;
+    planes = (Plane **)malloc(sizeof(Plane *) * length);
+
+    double fovrads = (fov / 180.0) * M_PI;
+    double aspect = (double)width / (double)height;
+
+    double topNear = tan(fovrads / 2.0) * zNear;
+    double rightNear = topNear * aspect;
+    double topFar = tan(fovrads / 2.0) * zFar;
+    double rightFar = topFar * aspect;
+
+    Point nearTopLeft(-rightNear, topNear, zNear);
+    Point nearTopRight(rightNear, topNear, zNear);
+    Point nearBottomLeft(-rightNear, -topNear, zNear);
+    Point nearBottomRight(rightNear, -topNear, zNear);
+
+    Point farTopLeft(-rightFar, topFar, zFar);
+    Point farTopRight(rightFar, topFar, zFar);
+    Point farBottomLeft(-rightFar, -topFar, zFar);
+    Point farBottomRight(rightFar, -topFar, zFar);
+
+
+    // First, the near clipping plane.
+    planes[0] = new Plane(&nearTopLeft, &nearBottomLeft, &nearTopRight);
+
+    // Now, the far clipping plane.
+    planes[1] = new Plane(&farTopLeft, &farTopRight, &farBottomLeft);
+
+    // Now, the top clipping plane.
+    planes[2] = new Plane(&nearTopLeft, &nearTopRight, &farTopRight);
+
+    // Now the bottom clipping plane.
+    planes[3] = new Plane(&nearBottomLeft, &farBottomLeft, &farBottomRight);
+
+    // Now the left clipping plane.
+    planes[4] = new Plane(&nearBottomLeft, &nearTopLeft, &farTopLeft);
+
+    // Finally the right clipping plane.
+    planes[5] = new Plane(&nearBottomRight, &farBottomRight, &farTopRight);
+}
+
+Frustum::~Frustum() {
+    for (int i = 0; i < length; i++) {
+        delete planes[i];
+    }
+
+    free(planes);
+    planes = 0;
+    length = 0;
+}
+
 Matrix::Matrix() {
     a11 = 1.0;
     a12 = 0.0;
