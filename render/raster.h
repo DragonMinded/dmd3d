@@ -91,6 +91,13 @@ class Screen {
         void drawOccludedQuad(Point *first, Point *second, Point *third, Point *fourth);
         void drawOccludedPolygon(Point *points[], int length);
 
+        // Overloaded versions of the above, which allow you to control whether a particular edge is highlighted or not.
+        // Useful for frustum culling occluded polygons where some edges should no longer be highlighted. Note that the
+        // drawn/not drawn flag for a given edge is attached to the beginning point for that edge.
+        void drawOccludedTri(Point *first, Point *second, Point *third, bool drawFirst, bool drawSecond, bool drawThird);
+        void drawOccludedQuad(Point *first, Point *second, Point *third, Point *fourth, bool drawFirst, bool drawSecond, bool drawThird, bool drawFourth);
+        void drawOccludedPolygon(Point *points[], bool draws[], int length);
+
         // Draw a textured triangle, quad or arbitrary convex polygon with no edge intersection, using a supplied texture
         // and UV coordinates for the various points of the polygons, and respecting the Z-depth as represented on the points
         // by W which is 1/Z.

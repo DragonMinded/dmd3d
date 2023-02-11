@@ -13,10 +13,10 @@ class Polygon {
         ~Polygon();
 
         // Clone this polygon, including any intermediate transformations applied.
-        Polygon *clone();
+        virtual Polygon *clone();
 
         // Undo any transformations applied to this polygon.
-        void reset();
+        virtual void reset();
 
         // Perform an affine or perspective transformation on this model.
         void transform(Matrix *matrix);
@@ -25,12 +25,28 @@ class Polygon {
         void project(Matrix *matrix);
 
         // Draw this model to the given surface.
-        void draw(Screen *screen);
+        virtual void draw(Screen *screen);
 
-    private:
+    protected:
         Point **polyPoints;
-        Point **transPoints;
         int polyLength;
+
+        Point **transPoints;
+        int transPolyLength;
+};
+
+class OccludedWireframePolygon : public Polygon {
+    public:
+        OccludedWireframePolygon(Point *x, Point *y, Point *z);
+        OccludedWireframePolygon(Point *points[], int length);
+        ~OccludedWireframePolygon();
+
+        virtual Polygon *clone();
+        virtual void reset();
+        virtual void draw(Screen *screen);
+
+    protected:
+        bool *highlights;
 };
 
 class Model {

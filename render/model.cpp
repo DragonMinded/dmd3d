@@ -8,13 +8,18 @@
 #include "stl_reader.h"
 
 Polygon::Polygon(Point *x, Point *y, Point *z) {
+    // Set up initial polygon.
     polyLength = 3;
     polyPoints = (Point **)malloc(sizeof(polyPoints[0]) * 3);
-    transPoints = (Point **)malloc(sizeof(polyPoints[0]) * 3);
 
     polyPoints[0] = x->clone();
     polyPoints[1] = y->clone();
     polyPoints[2] = z->clone();
+
+    // Set up transformed polygon copy.
+    transPolyLength = 3;
+    transPoints = (Point **)malloc(sizeof(transPoints[0]) * 3);
+
     transPoints[0] = x->clone();
     transPoints[1] = y->clone();
     transPoints[2] = z->clone();
@@ -22,8 +27,12 @@ Polygon::Polygon(Point *x, Point *y, Point *z) {
 
 Polygon::Polygon(Point *points[], int length) {
     polyLength = length;
+    transPolyLength = length;
+
     polyPoints = (Point **)malloc(sizeof(polyPoints[0]) * length);
-    transPoints = (Point **)malloc(sizeof(polyPoints[0]) * length);
+    transPoints = (Point **)malloc(sizeof(transPoints[0]) * length);
+
+    // Safe to do this in one loop because polyLength == transPolyLength here.
     for (int i = 0; i < length; i++) {
         polyPoints[i] = points[i]->clone();
         transPoints[i] = points[i]->clone();
@@ -33,6 +42,8 @@ Polygon::Polygon(Point *points[], int length) {
 Polygon::~Polygon() {
     for (int i = 0; i < polyLength; i++) {
         delete polyPoints[i];
+    }
+    for (int i = 0; i < transPolyLength; i++) {
         delete transPoints[i];
     }
 
@@ -40,35 +51,95 @@ Polygon::~Polygon() {
     free(transPoints);
     polyPoints = 0;
     transPoints = 0;
+
     polyLength = 0;
-}
-
-Polygon *Polygon::clone() {
-    // Make sure if we clone a polygon that's been transformed, the new is also.
-    return new Polygon(transPoints, polyLength);
-}
-
-void Polygon::reset() {
-    for (int i = 0; i < polyLength; i++) {
-        delete transPoints[i];
-        transPoints[i] = polyPoints[i]->clone();
-    }
+    transPolyLength = 0;
 }
 
 void Polygon::transform(Matrix *matrix) {
-    for (int i = 0; i < polyLength; i++) {
+    for (int i = 0; i < transPolyLength; i++) {
         matrix->multiplyUpdatePoint(transPoints[i]);
     }
 }
 
 void Polygon::project(Matrix *matrix) {
-    for (int i = 0; i < polyLength; i++) {
+    for (int i = 0; i < transPolyLength; i++) {
         matrix->projectUpdatePoint(transPoints[i]);
     }
 }
 
+Polygon *Polygon::clone() {
+    // Make sure if we clone a polygon that's been transformed, the new is also.
+    return new Polygon(transPoints, transPolyLength);
+}
+
+void Polygon::reset() {
+    // Kill old transformed polygon entirely, it could be frustum culled and have more points than
+    // our original.
+    for (int i = 0; i < transPolyLength; i++) {
+        delete transPoints[i];
+    }
+    free(transPoints);
+
+    transPolyLength = polyLength;
+    transPoints = (Point **)malloc(sizeof(transPoints[0]) * polyLength);
+
+    for (int i = 0; i < polyLength; i++) {
+        transPoints[i] = polyPoints[i]->clone();
+    }
+}
+
 void Polygon::draw(Screen *screen) {
-    screen->drawOccludedPolygon(transPoints, polyLength);
+    screen->drawPolygon(transPoints, transPolyLength, true);
+}
+
+OccludedWireframePolygon::OccludedWireframePolygon(Point *x, Point *y, Point *z) : Polygon(x, y, z) {
+    highlights = (bool *)malloc(sizeof(bool) * 3);
+    highlights[0] = true;
+    highlights[1] = true;
+    highlights[2] = true;
+}
+
+OccludedWireframePolygon::OccludedWireframePolygon(Point *points[], int length) : Polygon(points, length) {
+    highlights = (bool *)malloc(sizeof(bool) * length);
+
+    for (int i = 0; i < length; i++) {
+        highlights[i] = true;
+    }
+}
+
+Polygon *OccludedWireframePolygon::clone() {
+    // Make sure if we clone a polygon that's been transformed, the new is also. Also make sure
+    // to copy culled edge information.
+    OccludedWireframePolygon *newPoly = new OccludedWireframePolygon(transPoints, transPolyLength);
+    for (int i = 0; i < transPolyLength; i++) {
+        newPoly->highlights[i] = highlights[i];
+    }
+
+    return newPoly;
+}
+
+void OccludedWireframePolygon::reset() {
+    // Kill old transformed polygon entirely, it could be frustum culled and have more points than
+    // our original.
+    for (int i = 0; i < transPolyLength; i++) {
+        delete transPoints[i];
+    }
+    free(transPoints);
+    free(highlights);
+
+    transPolyLength = polyLength;
+    transPoints = (Point **)malloc(sizeof(transPoints[0]) * polyLength);
+    highlights = (bool *)malloc(sizeof(bool) * polyLength);
+
+    for (int i = 0; i < polyLength; i++) {
+        transPoints[i] = polyPoints[i]->clone();
+        highlights[i] = true;
+    }
+}
+
+void OccludedWireframePolygon::draw(Screen *screen) {
+    screen->drawOccludedPolygon(transPoints, highlights, transPolyLength);
 }
 
 Model::Model(Polygon *polygons[], int length) {
@@ -95,7 +166,7 @@ Model::Model(const char * const modelFile) {
             triPoints[icorner] = new Point(c[0], c[1], c[2]);
         }
 
-        polygons[itri] = new Polygon(triPoints, 3);
+        polygons[itri] = new OccludedWireframePolygon(triPoints, 3);
         delete triPoints[0];
         delete triPoints[1];
         delete triPoints[2];

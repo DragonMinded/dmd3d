@@ -363,10 +363,7 @@ void Screen::drawTexturedTri(Point *first, Point *second, Point *third, UV *firs
             if (curPoint.x < 0.0 || curPoint.x > 1.0) {
                 continue;
             }
-            if (curPoint.y < 0.0 || curPoint.y > 1.0) {
-                continue;
-            }
-            if (curPoint.y > (1.0 - curPoint.x)) {
+            if (curPoint.y < 0.0 || curPoint.y > (1.0 - curPoint.x)) {
                 continue;
             }
 
@@ -455,10 +452,7 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
                 if (curPoint.x < 0.0 || curPoint.x > 1.0) {
                     continue;
                 }
-                if (curPoint.y < 0.0 || curPoint.y > 1.0) {
-                    continue;
-                }
-                if (curPoint.y > (1.0 - curPoint.x)) {
+                if (curPoint.y < 0.0 || curPoint.y > (1.0 - curPoint.x)) {
                     continue;
                 }
             }
@@ -549,6 +543,70 @@ void Screen::drawOccludedPolygon(Point *points[], int length) {
         tmpScreen->drawLine(points[i], points[i + 1], true);
     }
     tmpScreen->drawLine(points[length - 1], points[0], true);
+
+    // Now, draw the "texture" in length-2 triangles.
+    for (int i = 0; i < length - 2; i++) {
+        _drawOccludedTri(points[i], points[i + 1], points[length - 1], tmpScreen);
+    }
+}
+
+void Screen::drawOccludedTri(Point *first, Point *second, Point *third, bool drawFirst, bool drawSecond, bool drawThird) {
+    // Don't draw this if it is back-facing.
+    if (_isBackFacing(first, second, third)) { return; }
+
+    // First, we draw the border, so that we have the "texture" to pull from when we want to outline the triangle.
+    Screen *tmpScreen = _getMaskScreen();
+    tmpScreen->clear();
+    if (drawFirst) { tmpScreen->drawLine(first, second, true); }
+    if (drawSecond) { tmpScreen->drawLine(second, third, true); }
+    if (drawThird) { tmpScreen->drawLine(third, first, true); }
+
+    // Now, draw the "texture".
+    _drawOccludedTri(first, second, third, tmpScreen);
+}
+
+void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *fourth, bool drawFirst, bool drawSecond, bool drawThird, bool drawFourth) {
+    // Don't draw this if it is back-facing.
+    if (_isBackFacing(first, second, fourth)) { return; }
+
+    // First, we draw the border, so that we have the "texture" to pull from when we want to outline the quad.
+    Screen *tmpScreen = _getMaskScreen();
+    tmpScreen->clear();
+    if (drawFirst) { tmpScreen->drawLine(first, second, true); }
+    if (drawSecond) { tmpScreen->drawLine(second, third, true); }
+    if (drawThird) { tmpScreen->drawLine(third, fourth, true); }
+    if (drawFourth) { tmpScreen->drawLine(fourth, first, true); }
+
+    // Now, draw the "texture" in two quads.
+    _drawOccludedTri(first, second, fourth, tmpScreen);
+    _drawOccludedTri(second, third, fourth, tmpScreen);
+}
+
+void Screen::drawOccludedPolygon(Point *points[], bool draws[], int length) {
+    // Don't draw this if it isn't at least a 3-poly.
+    if (length < 3) { return; }
+    if (length == 3) {
+        drawOccludedTri(points[0], points[1], points[2], draws[0], draws[1], draws[2]);
+        return;
+    }
+    if (length == 4) {
+        drawOccludedQuad(points[0], points[1], points[2], points[3], draws[0], draws[1], draws[2], draws[3]);
+        return;
+    }
+
+    // Don't draw this if it is back-facing.
+    if (_isBackFacing(points[0], points[1], points[length - 1])) { return; }
+
+    // First, we draw the border, so that we have the "texture" to pull from when we want to outline the shape.
+    Screen *tmpScreen = _getMaskScreen();
+    tmpScreen->clear();
+
+    for (int i = 0; i < length - 1; i++) {
+        if (draws[i]) {
+            tmpScreen->drawLine(points[i], points[i + 1], true);
+        }
+    }
+    if (draws[length - 1]) { tmpScreen->drawLine(points[length - 1], points[0], true); }
 
     // Now, draw the "texture" in length-2 triangles.
     for (int i = 0; i < length - 2; i++) {
