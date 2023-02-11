@@ -14,6 +14,25 @@ class Point {
         double z;
 };
 
+class Plane {
+    public:
+        // Constructor
+        Plane(Point *first, Point *second, Point *third);
+
+        // Return whether a point is above (true) or below (false) a plane, assuming
+        // that the plane is constructed via points in a CCW fashion.
+        bool isPointAbove(Point *point);
+
+    private:
+        Point p1;
+        Point p2;
+        Point p3;
+
+        double nx;
+        double ny;
+        double nz;
+};
+
 class Matrix {
     public:
         // Constructor (makes the identity matrix).

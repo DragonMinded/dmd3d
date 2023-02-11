@@ -52,11 +52,41 @@ void translate_test() {
     delete point;
 }
 
+void plane_test() {
+    // First, an easy plane.
+    {
+        Point first(0.0, 0.0, 0.0);
+        Point second(1.0, 0.0, 0.0);
+        Point third(0.0, 1.0, 0.0);
+
+        Plane xyPlane(&first, &second, &third);
+
+        Point above(1.0, 2.0, 3.0);
+        Point below(2.0, 3.0, -4.0);
+        ASSERT(xyPlane.isPointAbove(&above), "Point is not above plane but should be?");
+        ASSERT(!xyPlane.isPointAbove(&below), "Point is above plane but shouldn't be?");
+    }
+
+    // Now, a vertical plane.
+    {
+        Point first(0.0, 0.0, 0.0);
+        Point second(0.0, 1.0, 0.0);
+        Point third(0.0, 0.0, 1.0);
+
+        Plane yzPlane(&first, &second, &third);
+        Point above(1.0, 2.0, 3.0);
+        Point below(-2.0, 3.0, 4.0);
+        ASSERT(yzPlane.isPointAbove(&above), "Point is not above plane but should be?");
+        ASSERT(!yzPlane.isPointAbove(&below), "Point is above plane but shouldn't be?");
+    }
+}
+
 int main(int argc, char *argv[]) {
     printf("Running matrix tests...\n");
 
     multiply_point_test();
     translate_test();
+    plane_test();
 
     printf("Done!\n");
 

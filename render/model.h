@@ -33,6 +33,8 @@ class Polygon {
 
         Point **transPoints;
         int transPolyLength;
+
+        bool culled;
 };
 
 class OccludedWireframePolygon : public Polygon {

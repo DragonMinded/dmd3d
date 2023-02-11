@@ -23,6 +23,9 @@ Polygon::Polygon(Point *x, Point *y, Point *z) {
     transPoints[0] = x->clone();
     transPoints[1] = y->clone();
     transPoints[2] = z->clone();
+
+    // We aren't culled.
+    culled = false;
 }
 
 Polygon::Polygon(Point *points[], int length) {
@@ -37,6 +40,9 @@ Polygon::Polygon(Point *points[], int length) {
         polyPoints[i] = points[i]->clone();
         transPoints[i] = points[i]->clone();
     }
+
+    // We aren't culled.
+    culled = false;
 }
 
 Polygon::~Polygon() {
@@ -87,10 +93,15 @@ void Polygon::reset() {
     for (int i = 0; i < polyLength; i++) {
         transPoints[i] = polyPoints[i]->clone();
     }
+
+    // We aren't culled.
+    culled = false;
 }
 
 void Polygon::draw(Screen *screen) {
-    screen->drawPolygon(transPoints, transPolyLength, true);
+    if (!culled) {
+        screen->drawPolygon(transPoints, transPolyLength, true);
+    }
 }
 
 OccludedWireframePolygon::OccludedWireframePolygon(Point *x, Point *y, Point *z) : Polygon(x, y, z) {
@@ -136,10 +147,15 @@ void OccludedWireframePolygon::reset() {
         transPoints[i] = polyPoints[i]->clone();
         highlights[i] = true;
     }
+
+    // We aren't culled.
+    culled = false;
 }
 
 void OccludedWireframePolygon::draw(Screen *screen) {
-    screen->drawOccludedPolygon(transPoints, highlights, transPolyLength);
+    if (!culled) {
+        screen->drawOccludedPolygon(transPoints, highlights, transPolyLength);
+    }
 }
 
 Model::Model(Polygon *polygons[], int length) {

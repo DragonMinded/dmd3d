@@ -13,6 +13,40 @@ Point *Point::clone() {
     return new Point(x, y, z);
 }
 
+Plane::Plane(Point *first, Point *second, Point *third) :
+    p1(first->x, first->y, first->z),
+    p2(second->x, second->y, second->z),
+    p3(third->x, third->y, third->z)
+{
+    // Calculate the normal for this plane.
+    double bx = third->x - first->x;
+    double by = third->y - first->y;
+    double bz = third->z - first->z;
+
+    double ax = second->x - first->x;
+    double ay = second->y - first->y;
+    double az = second->z - first->z;
+
+    double nx = (ay * bz) - (az * by);
+    double ny = (az * bx) - (ax * bz);
+    double nz = (ax * by) - (ay * bx);
+
+    double length = sqrt((nx * nx) + (ny * ny) + (nz * nz));
+    this->nx = nx / length;
+    this->ny = ny / length;
+    this->nz = nz / length;
+}
+
+bool Plane::isPointAbove(Point *point) {
+    // Figure out the signed distance from the plane (choose an arbitrary point
+    // on the plane and use the computed normal.
+    double vx = point->x - p1.x;
+    double vy = point->y - p1.y;
+    double vz = point->z - p1.z;
+
+    double dot = (vx * nx) + (vy * ny) + (vz * nz);
+    return dot >= 0.0;
+}
 
 Matrix::Matrix() {
     a11 = 1.0;
