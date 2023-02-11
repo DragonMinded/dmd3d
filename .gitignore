@@ -6,6 +6,7 @@
 *.webp
 *.png
 *.stl
+*.o
 frame.bin
 driver
 matrixtest

@@ -1,28 +1,39 @@
 all: matrixtest recttest cubetest polytest textest texcubetest screentest stltest
 
-matrixtest: matrix.cpp matrix.h matrixtest.cpp
-	g++ -O3 -g -o matrixtest matrix.cpp matrixtest.cpp
+# Engine stuff first.
+matrix.o: matrix.cpp matrix.h
+	g++ -O3 -g -c -o matrix.o matrix.cpp
 
-recttest: matrix.cpp matrix.h raster.cpp raster.h recttest.cpp
-	g++ -O3 -g -o recttest matrix.cpp raster.cpp recttest.cpp
+raster.o: raster.cpp raster.h
+	g++ -O3 -g -c -o raster.o raster.cpp
 
-cubetest: matrix.cpp matrix.h raster.cpp raster.h cubetest.cpp
-	g++ -O3 -g -o cubetest matrix.cpp raster.cpp cubetest.cpp
+model.o: model.cpp model.h
+	g++ -O3 -g -c -o model.o model.cpp
 
-polytest: matrix.cpp matrix.h raster.cpp raster.h polytest.cpp
-	g++ -O3 -g -o polytest matrix.cpp raster.cpp polytest.cpp
+# Test executables.
+matrixtest: matrix.o matrixtest.cpp
+	g++ -O3 -g -o matrixtest matrix.o matrixtest.cpp
 
-textest: matrix.cpp matrix.h raster.cpp raster.h textest.cpp
-	g++ -O3 -g -o textest matrix.cpp raster.cpp textest.cpp
+recttest: matrix.o raster.o recttest.cpp
+	g++ -O3 -g -o recttest matrix.o raster.o recttest.cpp
 
-texcubetest: matrix.cpp matrix.h raster.cpp raster.h texcubetest.cpp
-	g++ -O3 -g -o texcubetest matrix.cpp raster.cpp texcubetest.cpp
+cubetest: matrix.o raster.o cubetest.cpp
+	g++ -O3 -g -o cubetest matrix.o raster.o cubetest.cpp
 
-screentest: matrix.cpp matrix.h raster.cpp raster.h screentest.cpp
-	g++ -O3 -g -o screentest matrix.cpp raster.cpp screentest.cpp
+polytest: matrix.o raster.o polytest.cpp
+	g++ -O3 -g -o polytest matrix.o raster.o polytest.cpp
 
-stltest: matrix.cpp matrix.h raster.cpp raster.h model.cpp model.h stltest.cpp
-	g++ -O3 -g -o stltest matrix.cpp raster.cpp model.cpp stltest.cpp
+textest: matrix.o raster.o textest.cpp
+	g++ -O3 -g -o textest matrix.o raster.o textest.cpp
+
+texcubetest: matrix.o raster.o texcubetest.cpp
+	g++ -O3 -g -o texcubetest matrix.o raster.o texcubetest.cpp
+
+screentest: matrix.o raster.o screentest.cpp
+	g++ -O3 -g -o screentest matrix.o raster.o screentest.cpp
+
+stltest: matrix.o raster.o model.o stltest.cpp
+	g++ -O3 -g -o stltest matrix.o raster.o model.o stltest.cpp
 
 .PHONY: clean
 clean:

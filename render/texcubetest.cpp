@@ -79,17 +79,17 @@ int main (int argc, char *argv[]) {
 
         // Draw the cube four sides are textured and the other two are simple wireframe occlusion.
         // Demonstrate that we can intermix between these modes seamlessly.
-        screen->drawTexturedOccludedQuad(
+        screen->drawTexturedCulledQuad(
             cubeCoords[0], cubeCoords[1], cubeCoords[2], cubeCoords[3],
             uvCoords[0], uvCoords[1], uvCoords[2], uvCoords[3],
             testTex
         );
-        screen->drawTexturedOccludedQuad(
+        screen->drawTexturedCulledQuad(
             cubeCoords[5], cubeCoords[4], cubeCoords[7], cubeCoords[6],
             uvCoords[4], uvCoords[5], uvCoords[6], uvCoords[7],
             testTex2
         );
-        screen->drawTexturedOccludedQuad(
+        screen->drawTexturedCulledQuad(
             cubeCoords[0], cubeCoords[4], cubeCoords[5], cubeCoords[1],
             uvCoords[0], uvCoords[1], uvCoords[2], uvCoords[3],
             suite
@@ -97,7 +97,7 @@ int main (int argc, char *argv[]) {
         screen->drawOccludedQuad(
             cubeCoords[1], cubeCoords[5], cubeCoords[6], cubeCoords[2]
         );
-        screen->drawTexturedOccludedQuad(
+        screen->drawTexturedCulledQuad(
             cubeCoords[2], cubeCoords[6], cubeCoords[7], cubeCoords[3],
             uvCoords[4], uvCoords[5], uvCoords[6], uvCoords[7],
             suite2

@@ -204,19 +204,23 @@ bool Screen::_getPixel(int x, int y) {
     return pixBuf[x + (y * width)] != 0;
 }
 
-void Screen::drawPixel(int x, int y, double z, bool on) {
+void Screen::drawPixel(int x, int y, double w, bool on) {
     if (x < 0 || x >= width || y < 0 || y >= height) {
         return;
     }
 
-    // Z is technically 1/W, where W is -Z, so invert it.
+    // Even if we invert, a negative stays a negative so do a cheap
+    // test before we end up doing an expensive floating point inversion.
+    if (w > 0.0) {
+        return;
+    }
+
+    // Z is technically 1/W, so invert it for the Z-depth test.
+    double z = w;
     if (z != 0.0) {
         z = -1 / z;
     }
 
-    if (z < 0.0) {
-        return;
-    }
     if (z > zBuf[x + (y * width)]) {
         return;
     }
@@ -225,7 +229,7 @@ void Screen::drawPixel(int x, int y, double z, bool on) {
     zBuf[x + (y * width)] = z;
 }
 
-void Screen::drawLine(int x0, int y0, double z0, int x1, int y1, double z1, bool on) {
+void Screen::drawLine(int x0, int y0, double w0, int x1, int y1, double w1, bool on) {
     int dx =  abs (x1 - x0);
     int dy = -abs (y1 - y0);
     int sx = x0 < x1 ? 1 : -1;
@@ -246,8 +250,8 @@ void Screen::drawLine(int x0, int y0, double z0, int x1, int y1, double z1, bool
         if (e2 <= dx) { err += dx; y0 += sy; }
     }
 
-    // Given those steps, figure out dz.
-    double dz = (steps <= 0) ? 0.0 : ((z1 - z0) / (double)steps);
+    // Given those steps, figure out dw.
+    double dw = (steps <= 0) ? 0.0 : ((w1 - w0) / (double)steps);
 
     // Reset our lines.
     x0 = origX;
@@ -256,13 +260,13 @@ void Screen::drawLine(int x0, int y0, double z0, int x1, int y1, double z1, bool
 
     // Now, draw it.
     for (;;){
-        drawPixel(x0, y0, z0, on);
+        drawPixel(x0, y0, w0, on);
         if (x0 == x1 && y0 == y1) break;
 
         int e2 = 2 * err;
         if (e2 >= dy) { err += dy; x0 += sx; } /* e_xy+e_x > 0 */
         if (e2 <= dx) { err += dx; y0 += sy; } /* e_xy+e_y < 0 */
-        z0 += dz;
+        w0 += dw;
     }
 }
 
@@ -552,7 +556,7 @@ void Screen::drawOccludedPolygon(Point *points[], int length) {
     }
 }
 
-void Screen::drawTexturedOccludedTri(Point *first, Point *second, Point *third, UV *firstTex, UV *secondTex, UV *thirdTex, Texture *tex) {
+void Screen::drawTexturedCulledTri(Point *first, Point *second, Point *third, UV *firstTex, UV *secondTex, UV *thirdTex, Texture *tex) {
     // Don't draw this if it is back-facing.
     if (_isBackFacing(first, second, third)) { return; }
 
@@ -560,7 +564,7 @@ void Screen::drawTexturedOccludedTri(Point *first, Point *second, Point *third, 
     drawTexturedTri(first, second, third, firstTex, secondTex, thirdTex, tex);
 }
 
-void Screen::drawTexturedOccludedQuad(
+void Screen::drawTexturedCulledQuad(
     Point *first, Point *second, Point *third, Point *fourth,
     UV *firstTex, UV *secondTex, UV *thirdTex, UV *fourthTex,
     Texture *tex
@@ -572,15 +576,15 @@ void Screen::drawTexturedOccludedQuad(
     drawTexturedQuad(first, second, third, fourth, firstTex, secondTex, thirdTex, fourthTex, tex);
 }
 
-void Screen::drawTexturedOccludedPolygon(Point *points[], UV *uv[], int length, Texture *tex) {
+void Screen::drawTexturedCulledPolygon(Point *points[], UV *uv[], int length, Texture *tex) {
     // Don't draw this if it isn't at least a 3-poly.
     if (length < 3) { return; }
     if (length == 3) {
-        drawTexturedOccludedTri(points[0], points[1], points[2], uv[0], uv[1], uv[2], tex);
+        drawTexturedCulledTri(points[0], points[1], points[2], uv[0], uv[1], uv[2], tex);
         return;
     }
     if (length == 4) {
-        drawTexturedOccludedQuad(points[0], points[1], points[2], points[3], uv[0], uv[1], uv[2], uv[3], tex);
+        drawTexturedCulledQuad(points[0], points[1], points[2], points[3], uv[0], uv[1], uv[2], uv[3], tex);
         return;
     }
 
