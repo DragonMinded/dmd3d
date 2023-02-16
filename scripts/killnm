@@ -1,0 +1,17 @@
+#! /bin/bash
+
+# Wait for network to come up and be usable.
+printf "%s" "waiting for network "
+while ! ping -c 1 -n -w 1 10.0.0.1 &> /dev/null
+do
+    printf "%c" "."
+done
+printf "\n%s\n"  "network up!"
+
+# Wait a few seconds.
+sleep 5
+
+# Kill network-manager.
+echo "killing network-manager..."
+systemctl stop NetworkManager
+echo "done!"

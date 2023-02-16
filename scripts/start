@@ -1,0 +1,14 @@
+#! /bin/bash
+
+# Wait for kernel to settle.
+sleep 10
+
+# Kill status LEDs on board.
+echo none > /sys/class/leds/user-led2/trigger
+
+# Run the sign.
+while [ 1 ] ; do
+    sleep 5
+    cd /sign/
+    /sign/driver
+done
