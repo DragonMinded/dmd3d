@@ -8,6 +8,7 @@
 *.stl
 *.o
 frame.bin
+lastframe
 driver
 matrixtest
 cubetest

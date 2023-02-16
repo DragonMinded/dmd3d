@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/time.h>
 #include "wiringx.h"
 
 #define COL_DATA 8
@@ -11,6 +12,13 @@
 #define ROW_CLOCK 27
 #define ROW_DATA 28
 #define OUT_ENABLE 29
+
+unsigned long long getTimeInMicros() {
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+
+    return (((unsigned long long)tv.tv_sec) * 1000000ULL) + ((unsigned long long)tv.tv_usec);
+}
 
 int main() {
     if (nice(-20) == -1) {
@@ -39,13 +47,16 @@ int main() {
     pinMode(COL_CLOCK, PINMODE_OUTPUT);
     digitalWrite(COL_CLOCK, LOW);
 
-    printf("Displaying a grid pattern...\n");
+    printf("Displaying images from frame.bin file...\n");
 
     unsigned long lastTime = (unsigned long)time(NULL);
     unsigned long frames = 0;
     unsigned long lastFrame = 0;
 
     while( 1 ) {
+        unsigned long long startTime = getTimeInMicros();
+
+        // First, read our frame, and if it isn't available, read a blank screen.
         uint8_t data[128*65];
         FILE *fp = fopen("frame.bin", "rb");
 
@@ -113,19 +124,10 @@ int main() {
             digitalWrite(OUT_ENABLE, HIGH);
         }
 
-        // With the current setup, this delay gives a solid 60fps refresh, so we can
-        // stay in refresh lock with anything trying to output video.
-        for (int delay = 0; delay < 61; delay++) {
-            delayMicroseconds(17);
-        }
+        // Wait for exactly 1/60 of a second in a busyloop, so we can maintain a 60fps refresh rate.
+        while ((getTimeInMicros() - startTime) < 16667ULL) { ; }
 
+        // Calculate and log our FPS.
         frames++;
-
-        unsigned long curTime = (unsigned long)time(NULL);
-        if (curTime != lastTime) {
-            printf("FPS: %lu\n", frames);
-            lastTime = curTime;
-            frames = 0;
-        }
     }
 }
