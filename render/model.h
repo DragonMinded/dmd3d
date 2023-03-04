@@ -1,6 +1,8 @@
 #ifndef MODEL_H
 #define MODEL_H
 
+#include <map>
+#include <vector>
 #include "matrix.h"
 #include "raster.h"
 
@@ -32,10 +34,11 @@ class Polygon {
 
     protected:
         Point **polyPoints;
+        bool *highlights;
         int polyLength;
 
         Point **transPoints;
-        bool *highlights;
+        bool *transHighlights;
         int transPolyLength;
 
         bool culled;
@@ -51,6 +54,9 @@ class OccludedWireframePolygon : public Polygon {
         virtual void draw(Screen *screen);
 };
 
+typedef std::vector<int> PolyOffset;
+typedef std::map<Point, PolyOffset> NormalMap;
+
 class Model {
     public:
         Model(Polygon *polygons[], int length);
@@ -59,6 +65,9 @@ class Model {
 
         // Clone this model, including any intermediate transformations applied.
         Model *clone();
+
+        // Attempt to combine adjacent polygons into a single polygon for rendering prettiness.
+        void coalesce();
 
         // Undo any transformations applied to this model.
         void reset();
@@ -84,6 +93,8 @@ class Model {
     private:
         Polygon **polygons;
         int modelLength;
+
+        NormalMap normalMap;
 };
 
 #endif

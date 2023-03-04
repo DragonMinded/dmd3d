@@ -14,6 +14,7 @@ int main (int argc, char *argv[]) {
 
     // Load the model.
     Model *model = new Model("testmodel.stl");
+    model->coalesce();
     Point *origin = model->getOrigin();
 
     Point *dimensions = model->getDimensions();
