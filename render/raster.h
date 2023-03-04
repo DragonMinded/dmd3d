@@ -124,14 +124,16 @@ class Screen {
         const int height;
     private:
         Screen *_getMaskScreen();
+        Screen *_getTexScreen();
         bool _getPixel(int x, int y);
         bool _isBackFacing(Point *first, Point *second, Point *third);
-        void _drawOccludedTri(Point *first, Point *second, Point *third, Screen *outline);
+        void _drawOccludedTri(Point *first, Point *second, Point *third, Screen *mask, Screen *tex);
 
         int normalOrder;
         unsigned char *pixBuf;
         double *zBuf;
         Screen *maskScreen;
+        Screen *texScreen;
 };
 
 #endif

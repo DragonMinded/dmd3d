@@ -131,6 +131,7 @@ Screen::Screen(int reqWidth, int reqHeight) : width(reqWidth), height(reqHeight)
     this->zBuf = (double *)malloc(width * height * sizeof(zBuf[0]));
     this->normalOrder = NORMAL_ORDER_CCW;
     this->maskScreen = 0;
+    this->texScreen = 0;
 }
 
 Screen::~Screen() {
@@ -139,6 +140,10 @@ Screen::~Screen() {
     if (this->maskScreen) {
         delete this->maskScreen;
         this->maskScreen = 0;
+    }
+    if (this->texScreen) {
+        delete this->texScreen;
+        this->texScreen = 0;
     }
 }
 
@@ -402,7 +407,7 @@ void Screen::drawTexturedPolygon(Point *points[], UV *uv[], int length, Texture 
     }
 }
 
-void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen *screen) {
+void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen *mask, Screen *tex) {
     // Calculate the bounds.
     int minX = (int)MIN(MIN(first->x, second->x), third->x);
     int minY = (int)MIN(MIN(first->y, second->y), third->y);
@@ -445,7 +450,7 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
             // We know where it should be, so rounding errors where the inverse
             // matrix falls slightly outside of the box can be avoided if we just
             // assume every "lit" pixel in the texture "mask" is within bounds.
-            bool isSet = screen->_getPixel(x, y);
+            bool isSet = mask->_getPixel(x, y);
             if (!isSet) {
                 // Make sure that we stay within bounds of the triangle.
                 if (curPoint.x < 0.0 || curPoint.x > 1.0) {
@@ -458,7 +463,7 @@ void Screen::_drawOccludedTri(Point *first, Point *second, Point *third, Screen 
 
             // Figure out the 1/W coordinate for this pixel.
             xywMatrix.multiplyUpdatePoint(&curPoint);
-            drawPixel(x, y, curPoint.z, isSet);
+            drawPixel(x, y, curPoint.z, tex->_getPixel(x, y));
         }
     }
 }
@@ -492,17 +497,22 @@ Screen *Screen::_getMaskScreen() {
     return maskScreen;
 }
 
+Screen *Screen::_getTexScreen() {
+    texScreen = (texScreen == NULL) ? new Screen(width, height) : texScreen;
+    return texScreen;
+}
+
 void Screen::drawOccludedTri(Point *first, Point *second, Point *third) {
     // Don't draw this if it is back-facing.
     if (_isBackFacing(first, second, third)) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the triangle.
-    Screen *tmpScreen = _getMaskScreen();
-    tmpScreen->clear();
-    tmpScreen->drawTri(first, second, third, true);
+    Screen *mask = _getMaskScreen();
+    mask->clear();
+    mask->drawTri(first, second, third, true);
 
     // Now, draw the "texture".
-    _drawOccludedTri(first, second, third, tmpScreen);
+    _drawOccludedTri(first, second, third, mask, mask);
 }
 
 void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *fourth) {
@@ -510,13 +520,19 @@ void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *
     if (_isBackFacing(first, second, fourth)) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the quad.
-    Screen *tmpScreen = _getMaskScreen();
-    tmpScreen->clear();
-    tmpScreen->drawQuad(first, second, third, fourth, true);
+    Screen *mask = _getMaskScreen();
+    Screen *tex = _getTexScreen();
+
+    mask->clear();
+    mask->drawTri(first, second, fourth, true);
+    mask->drawTri(second, third, fourth, true);
+
+    tex->clear();
+    tex->drawQuad(first, second, third, fourth, true);
 
     // Now, draw the "texture" in two quads.
-    _drawOccludedTri(first, second, fourth, tmpScreen);
-    _drawOccludedTri(second, third, fourth, tmpScreen);
+    _drawOccludedTri(first, second, fourth, mask, tex);
+    _drawOccludedTri(second, third, fourth, mask, tex);
 }
 
 void Screen::drawOccludedPolygon(Point *points[], int length) {
@@ -535,17 +551,25 @@ void Screen::drawOccludedPolygon(Point *points[], int length) {
     if (_isBackFacing(points[0], points[1], points[length - 1])) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the shape.
-    Screen *tmpScreen = _getMaskScreen();
-    tmpScreen->clear();
+    Screen *mask = _getMaskScreen();
+    Screen *tex = _getTexScreen();
 
+    // Draw the mask of which edges we need to include.
+    mask->clear();
+    for (int i = 0; i < length - 2; i++) {
+        mask->drawTri(points[i], points[i + 1], points[length - 1], true);
+    }
+
+    // Draw the outline.
+    tex->clear();
     for (int i = 0; i < length; i++) {
         int j = (i + 1) % length;
-        tmpScreen->drawLine(points[i], points[j], true);
+        tex->drawLine(points[i], points[j], true);
     }
 
     // Now, draw the "texture" in length-2 triangles.
     for (int i = 0; i < length - 2; i++) {
-        _drawOccludedTri(points[i], points[i + 1], points[length - 1], tmpScreen);
+        _drawOccludedTri(points[i], points[i + 1], points[length - 1], mask, tex);
     }
 }
 
@@ -554,14 +578,19 @@ void Screen::drawOccludedTri(Point *first, Point *second, Point *third, bool dra
     if (_isBackFacing(first, second, third)) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the triangle.
-    Screen *tmpScreen = _getMaskScreen();
-    tmpScreen->clear();
-    if (drawFirst) { tmpScreen->drawLine(first, second, true); }
-    if (drawSecond) { tmpScreen->drawLine(second, third, true); }
-    if (drawThird) { tmpScreen->drawLine(third, first, true); }
+    Screen *tex = _getTexScreen();
+    tex->clear();
+    if (drawFirst) { tex->drawLine(first, second, true); }
+    if (drawSecond) { tex->drawLine(second, third, true); }
+    if (drawThird) { tex->drawLine(third, first, true); }
+
+    // Now, highlight the triangle itself so we don't get jaggies around edges due to floating point error.
+    Screen *mask = _getMaskScreen();
+    mask->clear();
+    mask->drawTri(first, second, third, true);
 
     // Now, draw the "texture".
-    _drawOccludedTri(first, second, third, tmpScreen);
+    _drawOccludedTri(first, second, third, mask, tex);
 }
 
 void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *fourth, bool drawFirst, bool drawSecond, bool drawThird, bool drawFourth) {
@@ -569,16 +598,22 @@ void Screen::drawOccludedQuad(Point *first, Point *second, Point *third, Point *
     if (_isBackFacing(first, second, fourth)) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the quad.
-    Screen *tmpScreen = _getMaskScreen();
-    tmpScreen->clear();
-    if (drawFirst) { tmpScreen->drawLine(first, second, true); }
-    if (drawSecond) { tmpScreen->drawLine(second, third, true); }
-    if (drawThird) { tmpScreen->drawLine(third, fourth, true); }
-    if (drawFourth) { tmpScreen->drawLine(fourth, first, true); }
+    Screen *tex = _getTexScreen();
+    tex->clear();
+    if (drawFirst) { tex->drawLine(first, second, true); }
+    if (drawSecond) { tex->drawLine(second, third, true); }
+    if (drawThird) { tex->drawLine(third, fourth, true); }
+    if (drawFourth) { tex->drawLine(fourth, first, true); }
+
+    // Now, highlight the triangles themselves we don't get jaggies around edges due to floating point error.
+    Screen *mask = _getMaskScreen();
+    mask->clear();
+    mask->drawTri(first, second, fourth, true);
+    mask->drawTri(second, third, fourth, true);
 
     // Now, draw the "texture" in two quads.
-    _drawOccludedTri(first, second, fourth, tmpScreen);
-    _drawOccludedTri(second, third, fourth, tmpScreen);
+    _drawOccludedTri(first, second, fourth, mask, tex);
+    _drawOccludedTri(second, third, fourth, mask, tex);
 }
 
 void Screen::drawOccludedPolygon(Point *points[], bool draws[], int length) {
@@ -597,19 +632,27 @@ void Screen::drawOccludedPolygon(Point *points[], bool draws[], int length) {
     if (_isBackFacing(points[0], points[1], points[length - 1])) { return; }
 
     // First, we draw the border, so that we have the "texture" to pull from when we want to outline the shape.
-    Screen *tmpScreen = _getMaskScreen();
-    tmpScreen->clear();
+    Screen *tex = _getTexScreen();
+    tex->clear();
 
     for (int i = 0; i < length; i++) {
         int j = (i + 1) % length;
         if (draws[i]) {
-            tmpScreen->drawLine(points[i], points[j], true);
+            tex->drawLine(points[i], points[j], true);
         }
+    }
+
+    // Highlight the mask of the polygons we'll draw so we don't get jaggies on edgse due to floating point rounding.
+    Screen *mask = _getMaskScreen();
+    mask->clear();
+
+    for (int i = 0; i < length - 2; i++) {
+        mask->drawTri(points[i], points[i + 1], points[length - 1], true);
     }
 
     // Now, draw the "texture" in length-2 triangles.
     for (int i = 0; i < length - 2; i++) {
-        _drawOccludedTri(points[i], points[i + 1], points[length - 1], tmpScreen);
+        _drawOccludedTri(points[i], points[i + 1], points[length - 1], mask, tex);
     }
 }
 
