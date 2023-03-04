@@ -8,6 +8,33 @@ Point::Point(double x, double y, double z) {
     this->z = z;
 }
 
+bool Point::operator <(const Point& rhs) const {
+    double cmp = rhs.x - x;
+    if (cmp == 0.0) {
+        cmp = rhs.y - y;
+        if (cmp == 0.0) {
+            cmp = rhs.z - z;
+        }
+    }
+
+    return cmp > 0.0;
+}
+
+bool Point::operator ==(const Point &other) const {
+    return (other.x == x) && (other.y == y) && (other.z == z);
+}
+
+bool Point::operator >(const Point& rhs) const {
+    double cmp = rhs.x - x;
+    if (cmp == 0.0) {
+        cmp = rhs.y - y;
+        if (cmp == 0.0) {
+            cmp = rhs.z - z;
+        }
+    }
+
+    return cmp < 0.0;
+}
 
 Point *Point::clone() {
     return new Point(x, y, z);

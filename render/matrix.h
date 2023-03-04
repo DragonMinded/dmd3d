@@ -9,6 +9,11 @@ class Point {
         // Return a clone of this point.
         Point *clone();
 
+        // Comparison operators, so points can be used as map keys.
+        bool operator <(const Point& rhs) const;
+        bool operator ==(const Point& other) const;
+        bool operator >(const Point& rhs) const;
+
         double x;
         double y;
         double z;

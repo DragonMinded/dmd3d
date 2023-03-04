@@ -3,6 +3,33 @@
 
 #define ASSERT(cond, error) if(!(cond)) { printf("%s:%d - %s (%s)\n", __FILE__, __LINE__, #cond, error); }
 
+void point_key_test() {
+    Point point1(10.0, 20.0, 30.0);
+    Point point2(10.0, 30.0, 20.0);
+    Point point3(10.0, 20.0, 40.0);
+    Point point4(10.0, 20.0, 30.0);
+
+    // Points that are obviously unequal.
+    ASSERT(point1 < point2, "Point 1 and point 2 don't compare properly!")
+    ASSERT(point2 > point1, "Point 1 and point 2 don't compare properly!")
+    ASSERT(!(point2 < point1), "Point 2 and point 1 don't compare properly!")
+    ASSERT(!(point1 > point2), "Point 2 and point 1 don't compare properly!")
+    ASSERT(!(point1 == point2), "Point 1 and point 2 don't compare properly!")
+
+    ASSERT(point1 < point3, "Point 1 and point 3 don't compare properly!")
+    ASSERT(point3 > point1, "Point 1 and point 3 don't compare properly!")
+    ASSERT(!(point3 < point1), "Point 3 and point 1 don't compare properly!")
+    ASSERT(!(point1 > point3), "Point 3 and point 1 don't compare properly!")
+    ASSERT(!(point1 == point3), "Point 1 and point 3 don't compare properly!")
+
+    // Points that should be equal.
+    ASSERT(!(point1 < point4), "Point 1 and point 4 don't compare properly!")
+    ASSERT(!(point4 > point1), "Point 1 and point 4 don't compare properly!")
+    ASSERT(!(point4 < point1), "Point 4 and point 1 don't compare properly!")
+    ASSERT(!(point1 > point4), "Point 4 and point 1 don't compare properly!")
+    ASSERT(point1 == point4, "Point 1 and point 4 don't compare properly!")
+}
+
 void multiply_point_test() {
     Point *point = new Point(10.0, 20.0, 30.0);
     Matrix *matrix = new Matrix();
@@ -100,6 +127,7 @@ void plane_test() {
 int main(int argc, char *argv[]) {
     printf("Running matrix tests...\n");
 
+    point_key_test();
     multiply_point_test();
     translate_test();
     plane_test();
