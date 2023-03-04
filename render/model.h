@@ -57,10 +57,13 @@ class OccludedWireframePolygon : public Polygon {
 typedef std::vector<int> PolyOffset;
 typedef std::map<Point, PolyOffset> NormalMap;
 
+#define FLAGS_WIREFRAME 0x0
+#define FLAGS_OCCLUDED  0x1
+
 class Model {
     public:
         Model(Polygon *polygons[], int length);
-        Model(const char *const modelFile);
+        Model(const char *const modelFile, int flags);
         ~Model();
 
         // Clone this model, including any intermediate transformations applied.

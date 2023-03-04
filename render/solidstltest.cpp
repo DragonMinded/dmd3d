@@ -13,7 +13,7 @@ int main (int argc, char *argv[]) {
     int count = 0;
 
     // Load the model.
-    Model *model = new Model("testmodel.stl", FLAGS_WIREFRAME);
+    Model *model = new Model("testmodel.stl", FLAGS_OCCLUDED);
     model->coalesce();
     Point *origin = model->getOrigin();
 

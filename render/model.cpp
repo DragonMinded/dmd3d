@@ -281,7 +281,7 @@ Model::Model(Polygon *polygons[], int length) {
     }
 }
 
-Model::Model(const char * const modelFile) {
+Model::Model(const char * const modelFile, int flags) {
     // TODO: Here would be a good place to figure out if it is a STL file or otherwise.
     stl_reader::StlMesh <float, unsigned int> mesh(modelFile);
 
@@ -305,7 +305,12 @@ Model::Model(const char * const modelFile) {
         }
         normalMap[normalPoint].push_back(itri);
 
-        polygons[itri] = new OccludedWireframePolygon(triPoints, 3);
+        if (flags & FLAGS_OCCLUDED) {
+            polygons[itri] = new OccludedWireframePolygon(triPoints, 3);
+        } else {
+            polygons[itri] = new Polygon(triPoints, 3);
+        }
+
         delete triPoints[0];
         delete triPoints[1];
         delete triPoints[2];

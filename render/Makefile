@@ -1,4 +1,4 @@
-all: matrixtest recttest cubetest polytest textest texcubetest screentest stltest
+all: matrixtest recttest cubetest polytest textest texcubetest screentest stltest solidstltest
 
 # Engine stuff first.
 matrix.o: matrix.cpp matrix.h
@@ -35,6 +35,9 @@ screentest: matrix.o raster.o screentest.cpp
 stltest: matrix.o raster.o model.o stltest.cpp
 	g++ -O3 -g -o stltest matrix.o raster.o model.o stltest.cpp
 
+solidstltest: matrix.o raster.o model.o solidstltest.cpp
+	g++ -O3 -g -o solidstltest matrix.o raster.o model.o solidstltest.cpp
+
 .PHONY: clean
 clean:
 	rm -rf matrixtest
@@ -45,3 +48,4 @@ clean:
 	rm -rf texcubetest
 	rm -rf screentest
 	rm -rf stltest
+	rm -rf solidstltest
