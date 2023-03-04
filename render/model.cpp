@@ -106,7 +106,7 @@ Polygon *Polygon::clone() {
     // Make sure if we clone a polygon that's been transformed, the new is also.
     Polygon *newPoly = new Polygon(transPoints, transPolyLength);
     for (int i = 0; i < transPolyLength; i++) {
-        newPoly->highlights[i] = highlights[i];
+        newPoly->highlights[i] = transHighlights[i];
         newPoly->transHighlights[i] = transHighlights[i];
     }
 
@@ -178,15 +178,21 @@ void Polygon::cull(Frustum *frustum) {
         bool inside = frustum->planes[j]->isPointAbove(transPoints[0]);
         int start = 0;
 
+        // We need to track which bits of the polygon are in/out of this particular cull operation,
+        // otherwise its possible for us to over-cull edges when we intersect two planes at once.
+        bool *inOrOut = (bool *)malloc(sizeof(bool) * (transPolyLength));
+
         while (start < transPolyLength) {
             // The end node we're looking at can wrap around.
             int end = (start + 1) % transPolyLength;
 
             bool newInside = frustum->planes[j]->isPointAbove(transPoints[end]);
+            bool curCulled = transHighlights[start];
 
             if (newInside == inside) {
                 // Simply mark this line for inclusion or exclusion, continuing the trend.
-                transHighlights[start] = transHighlights[start] ? newInside : false;
+                transHighlights[start] = curCulled & newInside;
+                inOrOut[start] = newInside;
 
                 // We didn't intersect, simply move on.
                 start++;
@@ -199,17 +205,21 @@ void Polygon::cull(Frustum *frustum) {
             // Insert that point.
             transPoints = (Point **)realloc(transPoints, sizeof(transPoints[0]) * (transPolyLength + 1));
             transHighlights = (bool *)realloc(transHighlights, sizeof(transHighlights[0]) * (transPolyLength + 1));
+            inOrOut = (bool *)realloc(inOrOut, sizeof(inOrOut[0]) * (transPolyLength + 1));
             if (end != 0) {
                 // Move the rest of the points to make room.
                 memmove(&transPoints[end + 1], &transPoints[end], sizeof(transPoints[0]) * (transPolyLength - end));
                 memmove(&transHighlights[end + 1], &transHighlights[end], sizeof(transHighlights[0]) * (transPolyLength - end));
+                memmove(&inOrOut[end + 1], &inOrOut[end], sizeof(inOrOut[0]) * (transPolyLength - end));
             }
             transPoints[start + 1] = intersection;
             transPolyLength++;
 
             // Mark the points themselves.
-            transHighlights[start] = transHighlights[start] ? inside : false;
-            transHighlights[start + 1] = transHighlights[start + 1] ? newInside : false;
+            transHighlights[start] = curCulled & inside;
+            transHighlights[start + 1] = curCulled & newInside;
+            inOrOut[start] = inside;
+            inOrOut[start + 1] = newInside;
 
             // Continue on.
             inside = newInside;
@@ -221,13 +231,14 @@ void Polygon::cull(Frustum *frustum) {
         while (edge < transPolyLength) {
             int next = (edge + 1) % transPolyLength;
 
-            if (!transHighlights[edge] && !transHighlights[next]) {
+            if (!inOrOut[edge] && !inOrOut[next]) {
                 // We can get rid of the next node entirely, since we aren't going to draw it.
                 delete transPoints[next];
 
                 if ((transPolyLength - (next + 1)) > 0) {
                     memmove(&transPoints[next], &transPoints[next + 1], sizeof(transPoints[0]) * (transPolyLength - (next + 1)));
                     memmove(&transHighlights[next], &transHighlights[next + 1], sizeof(transHighlights[0]) * (transPolyLength - (next + 1)));
+                    memmove(&inOrOut[next], &inOrOut[next + 1], sizeof(inOrOut[0]) * (transPolyLength - (next + 1)));
                 }
 
                 transPolyLength --;
@@ -235,6 +246,8 @@ void Polygon::cull(Frustum *frustum) {
                 edge ++;
             }
         }
+
+        free(inOrOut);
     }
 }
 
@@ -260,6 +273,7 @@ Polygon *OccludedWireframePolygon::clone() {
     OccludedWireframePolygon *newPoly = new OccludedWireframePolygon(transPoints, transPolyLength);
     for (int i = 0; i < transPolyLength; i++) {
         newPoly->highlights[i] = transHighlights[i];
+        newPoly->transHighlights[i] = transHighlights[i];
     }
 
     return newPoly;
@@ -275,8 +289,6 @@ Model::Model(Polygon *polygons[], int length) {
     modelLength = length;
     this->polygons = (Polygon **)malloc(sizeof(this->polygons[0]) * length);
     for (int i = 0; i < length; i++) {
-        // We can have deleted polygons here. It's a pain in the ass to properly keep the
-        // normal map in sync so we just allow for that.
         this->polygons[i] = polygons[i]->clone();
     }
 }
