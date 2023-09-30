@@ -4,6 +4,9 @@ from PIL import Image, ImageDraw, ImageFont
 from typing import Dict, List, Tuple
 
 
+FONT_LOCATION = os.path.join(os.path.dirname(os.path.abspath(__file__)), "font")
+
+
 class Char:
     def __init__(self, value: str, image: Image.Image) -> None:
         self.value = value
@@ -98,7 +101,7 @@ def replace_valid_emoji(font: Dict[str, Char], label_text: str) -> str:
                 in_emoji = False
                 accum += ":"
 
-                name = f"font/emoji-{accum[1:-1]}.bmp"
+                name = f"{FONT_LOCATION}/emoji-{accum[1:-1]}.bmp"
                 if os.path.isfile(name):
                     # Assign new codepath for this.
                     char = chr(location)
@@ -124,9 +127,9 @@ def write(text: str, out: str, center: bool = False, wrap: bool = False) -> None
 
     for c in text:
         if c not in font:
-            name = f"font/{ord(c)}.bmp"
+            name = f"{FONT_LOCATION}/{ord(c)}.bmp"
             if not os.path.isfile(name):
-                name = "font/unk.bmp"
+                name = f"{FONT_LOCATION}/unk.bmp"
 
             chrimg = Image.open(name)
             font[c] = Char(c, chrimg)
