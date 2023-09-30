@@ -1,6 +1,14 @@
 import argparse
+import os
 from PIL import Image, ImageDraw, ImageFont
-from typing import List, Tuple
+from typing import Dict, List, Tuple
+
+
+class Char:
+    def __init__(self, value: str, image: Image.Image) -> None:
+        self.value = value
+        self.image = image
+
 
 def split_word(word: str) -> Tuple[str, str]:
     tot = len(word)
@@ -20,21 +28,26 @@ def split_word(word: str) -> Tuple[str, str]:
 
 
 def get_font_params(
-    font: ImageFont.ImageFont, line: str
+    font: Dict[str, Char], line: str
 ) -> Tuple[int, int]:
-    left, top, right, bottom = font.getbbox(line)
-    return (abs(right - left), abs(bottom - top))
+    width = 0
+    height = 0
+    for c in line:
+        height = max(height, font[c].image.size[1])
+        width += font[c].image.size[0]
+
+    return width, height
 
 
 def get_wrapped_text(
-    font: ImageFont.ImageFont, label_text: str, line_length: int
+    font: Dict[str, Char], label_text: str, line_length: int
 ) -> List[Tuple[str, int, int]]:
     lines = [""]
     for word in label_text.split():
         oldline = lines[-1].strip()
         line = f"{lines[-1]} {word}".strip()
 
-        if font.getlength(line) <= line_length:
+        if get_font_params(font, line)[0] <= line_length:
             # We have enough room to add this word to the line.
             lines[-1] = line
         else:
@@ -48,25 +61,44 @@ def get_wrapped_text(
                 lines[-1] = f"{lines[-1]} {w1}".strip()
                 lines.append(w2)
 
-    return [(ln, *get_font_params(font, ln)) for ln in lines if ln]
+    return [(ln, *get_font_params(font, ln)) for ln in lines]
 
 
-def write(text: str, out: str, height: int = 12, center: bool = False) -> None:
+def get_unwrapped_text(
+    font: Dict[str, Char], label_text: str, line_length: int
+) -> List[Tuple[str, int, int]]:
+    lines = label_text.splitlines()
+
+    return [(ln, *get_font_params(font, ln)) for ln in lines]
+
+
+def write(text: str, out: str, center: bool = False, wrap: bool = False) -> None:
     img = Image.new(size=(128, 64), mode="RGB")
-    font = ImageFont.truetype("unifont.ttf", height)
-    draw = ImageDraw.Draw(img)
-    lines = get_wrapped_text(font, text, 128)
-    for lno, (line, width, _) in enumerate(lines):
-        draw.text(
-            (
-                ((128 - width) / 2) if center else 0,
-                height * lno,
-            ),
-            text=line,
-            font=font,
-            anchor="lt",
-            fill="white",
-        )
+    font: Dict[str, Char] = {}
+
+    for c in text:
+        if c not in font:
+            name = f"font/{ord(c)}.bmp"
+            if not os.path.isfile(name):
+                name = "font/unk.bmp"
+
+            chrimg = Image.open(name)
+            font[c] = Char(c, chrimg)
+
+    if wrap:
+        lines = get_wrapped_text(font, text, 128)
+    else:
+        lines = get_unwrapped_text(font, text, 128)
+
+    y = 0
+    for lno, (line, width, height) in enumerate(lines):
+        x = ((128 - width) // 2) if center else 0
+
+        for c in line:
+           img.paste(font[c].image, box=(x, y))
+           x += font[c].image.size[0]
+
+        y += height
 
     img = img.convert("L")
     img = img.convert("1")
@@ -94,11 +126,9 @@ if __name__ == "__main__":
         help="The converted binary file to write.",
     )
     parser.add_argument(
-        "--height",
-        metavar="HEIGHT",
-        type=int,
-        default=12,
-        help="The font height.",
+        "--wrap",
+        action="store_true",
+        help="If we should word-wrap the text or not.",
     )
     parser.add_argument(
         "--center",
@@ -107,4 +137,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    write(args.message, args.output, height=args.height, center=args.center)
+    write(args.message, args.output, center=args.center, wrap=args.wrap)
