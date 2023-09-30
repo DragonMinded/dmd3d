@@ -42,24 +42,33 @@ def get_font_params(
 def get_wrapped_text(
     font: Dict[str, Char], label_text: str, line_length: int
 ) -> List[Tuple[str, int, int]]:
-    lines = [""]
-    for word in label_text.split():
-        oldline = lines[-1].strip()
-        line = f"{lines[-1]} {word}".strip()
-
-        if get_font_params(font, line)[0] <= line_length:
-            # We have enough room to add this word to the line.
-            lines[-1] = line
-        else:
-            if oldline:
-                # There was something on the previous line, so start a new one.
-                lines.append(word)
+    lines = []
+    for text in label_text.splitlines():
+        skip_add = True
+        for word in text.split():
+            if not skip_add:
+                oldline = lines[-1].strip()
+                line = f"{lines[-1]} {word}".strip()
             else:
-                # There was nothing on the line, this word doesn't fit, so split it.
-                w1, w2 = split_word(word)
+                oldline = ""
+                line = word
 
-                lines[-1] = f"{lines[-1]} {w1}".strip()
-                lines.append(w2)
+            if not skip_add and get_font_params(font, line)[0] <= line_length:
+                # We have enough room to add this word to the line.
+                lines[-1] = line
+            else:
+                if skip_add or oldline:
+                    # There was something on the previous line, so start a new one.
+                    lines.append(word)
+                else:
+                    # There was nothing on the line, this word doesn't fit, so split it.
+                    w1, w2 = split_word(word)
+
+                    lines[-1] = f"{lines[-1]} {w1}".strip()
+                    lines.append(w2)
+
+            # No longer want to append to previous line if it exists.
+            skip_add = False
 
     return [(ln, *get_font_params(font, ln)) for ln in lines]
 
@@ -70,6 +79,43 @@ def get_unwrapped_text(
     lines = label_text.splitlines()
 
     return [(ln, *get_font_params(font, ln)) for ln in lines]
+
+
+def replace_valid_emoji(font: Dict[str, Char], label_text: str) -> str:
+    splitbits: List[str] = []
+
+    in_emoji = False
+    accum = ""
+    location = 0xE000
+
+    for c in label_text:
+        if c == ":":
+            if not in_emoji:
+                splitbits.append(accum)
+                in_emoji = True
+                accum = ":"
+            else:
+                in_emoji = False
+                accum += ":"
+
+                name = f"font/emoji-{accum[1:-1]}.bmp"
+                if os.path.isfile(name):
+                    # Assign new codepath for this.
+                    char = chr(location)
+                    location += 1
+
+                    chrimg = Image.open(name)
+                    font[char] = Char(char, chrimg)
+                    splitbits.append(char)
+                else:
+                    splitbits.append(accum)
+
+                accum = ""
+        else:
+            accum += c
+
+    splitbits.append(accum)
+    return "".join(splitbits)
 
 
 def write(text: str, out: str, center: bool = False, wrap: bool = False) -> None:
@@ -84,6 +130,8 @@ def write(text: str, out: str, center: bool = False, wrap: bool = False) -> None
 
             chrimg = Image.open(name)
             font[c] = Char(c, chrimg)
+
+    text = replace_valid_emoji(font, text)
 
     if wrap:
         lines = get_wrapped_text(font, text, 128)
@@ -137,4 +185,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    write(args.message, args.output, center=args.center, wrap=args.wrap)
+    write(args.message.encode('utf-8').decode('unicode_escape'), args.output, center=args.center, wrap=args.wrap)
