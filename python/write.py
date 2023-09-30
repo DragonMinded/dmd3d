@@ -35,10 +35,13 @@ def get_font_params(
 ) -> Tuple[int, int]:
     width = 0
     height = 0
-    for c in line:
+
+    # Make sure if it's empty that we include the height of one space.
+    for c in line + " ":
         height = max(height, font[c].image.size[1])
         width += font[c].image.size[0]
 
+    width -= font[' '].image.size[0]
     return width, height
 
 
@@ -47,6 +50,11 @@ def get_wrapped_text(
 ) -> List[Tuple[str, int, int]]:
     lines = []
     for text in label_text.splitlines():
+        # Make sure we support empty lines!
+        if not text:
+            lines.append("")
+            continue
+
         skip_add = True
         for word in text.split():
             if not skip_add:
@@ -125,7 +133,7 @@ def write(text: str, out: str, center: bool = False, wrap: bool = False) -> None
     img = Image.new(size=(128, 64), mode="RGB")
     font: Dict[str, Char] = {}
 
-    for c in text:
+    for c in text + " ":
         if c not in font:
             name = f"{FONT_LOCATION}/{ord(c)}.bmp"
             if not os.path.isfile(name):
