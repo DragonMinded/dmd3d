@@ -21,3 +21,4 @@ stltest
 solidstltest
 libwiringx.a
 wiringx.h
+__pycache__/
