@@ -1,0 +1,6 @@
+#! /bin/bash
+
+cd /usr/local/display
+
+STARTTIME=`date +%s`
+echo $STARTTIME > timestamps/update
