@@ -6,7 +6,7 @@ STARTTIME=`date +%s`
 echo $STARTTIME > timestamps/update
 
 # Start latest one in case we've been restarted
-./queue.py --latest
+python3 ./queue.py --latest
 
 # Now just display the rest in time
 while true
@@ -22,5 +22,5 @@ do
         break
     fi
 
-    ./queue.py --next
+    python3 ./queue.py --next
 done
