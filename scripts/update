@@ -1,0 +1,26 @@
+#! /bin/bash
+
+cd /usr/local/display
+
+STARTTIME=`date +%s`
+echo $STARTTIME > timestamps/update
+
+# Start latest one in case we've been restarted
+./queue.py --latest
+
+# Now just display the rest in time
+while true
+do 
+    sleep 10
+
+    CURTIME=`cat timestamps/update`
+
+    if [ $CURTIME -ne $STARTTIME ]
+    then
+        # Exit early, another one has preempted us
+        echo "'$CURTIME' != '$STARTTIME'" > timestamps/failure
+        break
+    fi
+
+    ./queue.py --next
+done
