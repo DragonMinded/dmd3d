@@ -6,9 +6,9 @@ import time
 import os
 
 def main():
-    # Load data set, prune to last two hours
+    # Load data set, prune to last twelve hours
     commands = data.Data('/usr/local/display/data.pckl')
-    commands.prune(time.time() - (3600 * 2))
+    commands.prune(time.time() - (3600 * 12))
 
     # Get options
     parser = optparse.OptionParser()
